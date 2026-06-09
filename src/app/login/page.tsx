@@ -1,11 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <main className="min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center px-6 py-12">
+      <div className="text-sm text-slate-500">Loading...</div>
+    </main>
+  );
+}
+
+function LoginForm() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
 
