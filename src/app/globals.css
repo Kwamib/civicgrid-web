@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,10 +13,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* CivicGrid uses a fixed light-mode editorial design. Force light colors
+   regardless of OS dark-mode preference. Without this, browsers that respect
+   prefers-color-scheme (Firefox, Safari) flip the background to dark while
+   our component-level color choices stay light, leaving hero text and other
+   navy-on-white elements unreadable. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
+    color-scheme: light;
   }
 }
 

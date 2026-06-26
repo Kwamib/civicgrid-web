@@ -41,6 +41,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* CivicGrid uses a fixed light-mode editorial design.
+            Tell the browser explicitly to render UI chrome (form controls,
+            scrollbars) in light mode regardless of OS preference. */}
+        <meta name="color-scheme" content="light" />
+      </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );
