@@ -2,61 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { citySlug } from "@/lib/slug";
-
-type City = {
-  id: number;
-  city: string;
-  state_code: string;
-  state_name: string;
-  county: string;
-  metro_area: string;
-  city_type: string;
-  population: number;
-  median_household_income: number;
-  median_age: number;
-  land_area_sq_mi: number;
-  population_density: number;
-  city_budget_text: string;
-  city_budget_numeric: number;
-  city_hall_phone: string;
-  url: string;
-  leader_name: string;
-  leader_title: string;
-  leader_party: string;
-  leader_year_elected: number;
-  leader_next_election: number;
-};
-
-const API_BASE = "https://api.civicgrid.org";
-const API_KEY = process.env.CIVICGRID_API_KEY;
-
-// Server-side fetch of all cities (uses the same caching we use in the proxy)
-async function getAllCities(): Promise<City[]> {
-  if (!API_KEY) return [];
-
-  const all: City[] = [];
-  let offset = 0;
-  const pageSize = 100;
-  const maxPages = 40;
-
-  for (let i = 0; i < maxPages; i++) {
-    const res = await fetch(
-      `${API_BASE}/cities?limit=${pageSize}&offset=${offset}`,
-      {
-        headers: { Authorization: `Bearer ${API_KEY}` },
-        next: { revalidate: 3600 },
-      }
-    );
-    if (!res.ok) break;
-    const json = await res.json();
-    const page = (json.data || []) as City[];
-    all.push(...page);
-    if (page.length < pageSize) break;
-    offset += pageSize;
-  }
-
-  return all;
-}
+import { getAllCities, type City } from "@/lib/cities";
+import { Header } from "@/components/Header";
 
 async function getCityBySlug(slug: string): Promise<City | null> {
   const all = await getAllCities();
@@ -102,51 +49,7 @@ export default async function CityDetailPage({
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      {/* Header */}
-      <header className="border-b border-slate-200">
-        <div className="mx-auto max-w-3xl px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center text-white text-base"
-              style={{
-                background: "#1a2540",
-                fontFamily: "var(--font-serif)",
-              }}
-            >
-              C
-            </div>
-            <span
-              className="text-lg font-medium tracking-tight group-hover:text-slate-700 transition"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              CivicGrid
-            </span>
-          </Link>
-          <nav className="flex items-center gap-6 text-sm text-slate-500">
-            <a
-              href="https://github.com/Kwamib/civicgrid-api"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-slate-900 transition hidden sm:inline"
-            >
-              API
-            </a>
-            <Link
-              href="/"
-              className="hover:text-slate-900 transition hidden sm:inline"
-            >
-              Search
-            </Link>
-            <a
-              href="mailto:hello@civicgrid.org?subject=API Key Request"
-              className="text-white text-xs font-medium px-3.5 py-1.5 rounded-md hover:opacity-90 transition"
-              style={{ background: "#1a2540" }}
-            >
-              Get key
-            </a>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Back link */}
       <div className="mx-auto max-w-3xl px-6 pt-6">
@@ -295,13 +198,13 @@ export default async function CityDetailPage({
             </div>
           </div>
 
-          <a
-            href="mailto:hello@civicgrid.org?subject=API Key Request"
+          <Link
+            href="/dashboard"
             className="inline-flex items-center px-5 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition"
             style={{ background: "#1a2540" }}
           >
             Get API key →
-          </a>
+          </Link>
         </div>
       </section>
 
