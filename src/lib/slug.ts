@@ -23,3 +23,10 @@ export function findCityBySlug<T extends { city: string; state_code: string }>(
     cities.find((c) => citySlug(c.city, c.state_code) === slug) ?? null
   );
 }
+
+export function stateSlug(stateName: string): string {
+  return stateName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
