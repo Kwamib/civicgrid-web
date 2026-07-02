@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { BetaNotice } from "@/components/BetaNotice";
 import { CitySearch } from "@/components/CitySearch";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <Header />
+      <BetaNotice />
 
       <CitySearch />
 
