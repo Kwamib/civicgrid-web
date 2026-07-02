@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     siteName: "CivicGrid",
     type: "website",
   },
+  verification: {
+    google: "XTNtMJjsIosWxYvsO1sAJeWUBv8VZZ8IPi9_Tpo1u5g",
+  },
 };
 
 export default function RootLayout({
