@@ -5,6 +5,8 @@ import { citySlug } from "@/lib/slug";
 import { getAllCities, type City } from "@/lib/cities";
 import { Header } from "@/components/Header";
 
+export const revalidate = 3600;
+
 async function getCityBySlug(slug: string): Promise<City | null> {
   const all = await getAllCities();
   return all.find((c) => citySlug(c.city, c.state_code) === slug) ?? null;
