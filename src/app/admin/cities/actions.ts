@@ -51,6 +51,7 @@ export async function updateLeader(
   cityId: number,
   fullName: string,
   leaderTitle: string,
+  source: string,
 ): Promise<{ ok: boolean; error?: string; mayor?: string }> {
   await requireAdminUser();
   if (!ADMIN_TOKEN) return { ok: false, error: "ADMIN_TOKEN not configured" };
@@ -76,6 +77,7 @@ export async function updateLeader(
       full_name: name,
       last_name: lastName,
       leader_title: leaderTitle.trim() || "Mayor",
+      source: source.trim() || null,
     }),
   });
   if (!res.ok) {

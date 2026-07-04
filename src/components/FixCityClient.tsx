@@ -18,6 +18,7 @@ export function FixCityClient() {
   const [editing, setEditing] = useState<number | null>(null);
   const [nameInput, setNameInput] = useState("");
   const [titleInput, setTitleInput] = useState("Mayor");
+  const [sourceInput, setSourceInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -35,13 +36,14 @@ export function FixCityClient() {
     setEditing(row.city_id);
     setNameInput(row.full_name ?? "");
     setTitleInput(row.leader_title ?? "Mayor");
+    setSourceInput(row.url ?? "");
     setMsg(null);
   }
 
   async function save(cityId: number) {
     setBusy(true);
     setMsg(null);
-    const res = await updateLeader(cityId, nameInput, titleInput);
+    const res = await updateLeader(cityId, nameInput, titleInput, sourceInput);
     setBusy(false);
     if (!res.ok) {
       setMsg(res.error || "Update failed");
@@ -87,6 +89,7 @@ export function FixCityClient() {
                   <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Mayor full name" className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                   <input value={titleInput} onChange={(e) => setTitleInput(e.target.value)} placeholder="Title" className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 </div>
+                <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 <div className="flex items-center gap-2">
                   <button onClick={() => save(row.city_id)} disabled={busy} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving..." : "Save"}</button>
                   <button onClick={() => setEditing(null)} disabled={busy} className="text-xs px-3 py-1.5 text-slate-500">Cancel</button>
