@@ -10,12 +10,14 @@ export type CityRow = {
   city: string;
   state_code: string;
   population: number | null;
+  governance_type?: string | null;
   leader_id: number | null;
   full_name: string | null;
   leader_title: string | null;
-  political_party: string | null;
+  political_party?: string | null;
   last_verified_at: string | null;
   url: string | null;
+  flagged_at?: string | null;
 };
 
 async function requireAdminUser() {
@@ -31,10 +33,8 @@ export async function searchCities(q: string, onlyUnverified = false): Promise<C
   await requireAdminUser();
   if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not configured");
   if (!q.trim()) return [];
-
   const params = new URLSearchParams({ q: q.trim(), limit: "25" });
   if (onlyUnverified) params.set("only_unverified", "true");
-
   const res = await fetch(`${API_BASE}/admin/cities/search?${params}`, {
     headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
     cache: "no-store",
@@ -47,25 +47,38 @@ export async function searchCities(q: string, onlyUnverified = false): Promise<C
   return json.cities ?? [];
 }
 
+export async function listUnsure(offset = 0): Promise<{ cities: CityRow[]; total: number }> {
+  await requireAdminUser();
+  if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not configured");
+  const res = await fetch(`${API_BASE}/admin/unsure?limit=25&offset=${offset}`, {
+    headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    console.error("listUnsure failed:", res.status, await res.text());
+    return { cities: [], total: 0 };
+  }
+  const json = await res.json();
+  return { cities: json.cities ?? [], total: json.total_remaining ?? 0 };
+}
+
 export async function updateLeader(
   cityId: number,
   fullName: string,
   leaderTitle: string,
   source: string,
+  governanceType: string,
 ): Promise<{ ok: boolean; error?: string; mayor?: string }> {
   await requireAdminUser();
   if (!ADMIN_TOKEN) return { ok: false, error: "ADMIN_TOKEN not configured" };
-
   const name = fullName.trim();
   if (!name) return { ok: false, error: "Name is required" };
-  // derive last_name (skip suffixes)
   const parts = name.replace(/,/g, "").split(/\s+/).filter(Boolean);
   const suffixes = new Set(["jr", "sr", "ii", "iii", "iv", "v"]);
   let lastName = parts[parts.length - 1] || name;
   if (parts.length > 1 && suffixes.has(lastName.toLowerCase())) {
     lastName = parts[parts.length - 2];
   }
-
   const res = await fetch(`${API_BASE}/admin/cities/${cityId}/leaders`, {
     method: "POST",
     headers: {
@@ -78,6 +91,7 @@ export async function updateLeader(
       last_name: lastName,
       leader_title: leaderTitle.trim() || "Mayor",
       source: source.trim() || null,
+      governance_type: governanceType || null,
     }),
   });
   if (!res.ok) {
