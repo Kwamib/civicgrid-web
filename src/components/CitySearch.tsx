@@ -52,15 +52,47 @@ export function CitySearch() {
         .slice(0, 8);
     }
 
-    return allCities
-      .filter(
-        (c) =>
-          c.city.toLowerCase().includes(q) ||
-          c.state_name.toLowerCase().includes(q) ||
-          c.state_code.toLowerCase() === q ||
-          (c.leader_name && c.leader_name.toLowerCase().includes(q))
-      )
-      .slice(0, 8);
+    // Support "City, ST" or "City ST" queries: split into city part + state part.
+    const commaMatch = q.match(/^(.*?)[,\s]+([a-z]{2}|[a-z\s]+)$/);
+    let cityPart = q;
+    let statePart: string | null = null;
+    if (q.includes(",")) {
+      const [c, s] = q.split(",").map((x) => x.trim());
+      cityPart = c;
+      statePart = s || null;
+    }
+
+    const scored = allCities
+      .map((c) => {
+        const city = c.city.toLowerCase();
+        const stateName = c.state_name.toLowerCase();
+        const stateCode = c.state_code.toLowerCase();
+
+        // If a state part was given, it must match the state.
+        if (statePart) {
+          const stateOk = stateCode === statePart || stateName.includes(statePart);
+          if (!stateOk) return null;
+          if (!city.includes(cityPart)) return null;
+          // exact city name ranks first, then prefix, then contains
+          const score = city === cityPart ? 0 : city.startsWith(cityPart) ? 1 : 2;
+          return { c, score };
+        }
+
+        // No state part: match city / state / leader as before, with ranking.
+        if (city === q) return { c, score: 0 };
+        if (city.startsWith(q)) return { c, score: 1 };
+        if (city.includes(q)) return { c, score: 2 };
+        if (stateCode === q) return { c, score: 3 };
+        if (stateName.includes(q)) return { c, score: 4 };
+        if (c.leader_name && c.leader_name.toLowerCase().includes(q)) return { c, score: 5 };
+        return null;
+      })
+      .filter((x): x is { c: (typeof allCities)[number]; score: number } => x !== null)
+      .sort((a, b) => a.score - b.score || b.c.population - a.c.population)
+      .slice(0, 8)
+      .map((x) => x.c);
+
+    return scored;
   }, [query, allCities]);
 
   const handleClear = () => {
