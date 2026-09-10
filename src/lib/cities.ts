@@ -26,19 +26,20 @@ export type City = {
 };
 
 /**
- * Process-level cache of the cities list.
+ * Process-level cache of the cities list, with a TTL.
  *
  * During a Next.js build, generateStaticParams + every page's generateMetadata
  * + every page's component all call getAllCities(). Without this cache, that
  * would be one fetch per call - thousands of fetches per build.
  *
- * Module-level memoization is bulletproof: one fetch per Node process for
- * the lifetime of that process. Each build worker fetches once at most.
- *
- * Cleared automatically when the process exits, so production runtime
- * behavior is unchanged - each new serverless invocation starts fresh.
+ * The TTL matters in production: a warm serverless instance reuses module
+ * state across requests, so an unexpiring cache served a stale leader list
+ * indefinitely (New Carrollton, 2026-09-10). Entries now expire after
+ * CACHE_TTL_MS and the next caller refetches.
  */
+const CACHE_TTL_MS = 5 * 60 * 1000;
 let cachedCities: City[] | null = null;
+let cachedAt = 0;
 let cachePromise: Promise<City[]> | null = null;
 
 /**
@@ -59,7 +60,7 @@ let cachePromise: Promise<City[]> | null = null;
  * Returns an empty array if the API key is missing or the request fails.
  */
 export async function getAllCities(): Promise<City[]> {
-  if (cachedCities !== null) return cachedCities;
+  if (cachedCities !== null && Date.now() - cachedAt < CACHE_TTL_MS) return cachedCities;
   if (cachePromise !== null) return cachePromise;
 
   if (!API_KEY) return [];
@@ -80,6 +81,8 @@ export async function getAllCities(): Promise<City[]> {
       const json = await res.json();
       const cities = (json.data || []) as City[];
       cachedCities = cities;
+      cachedAt = Date.now();
+      cachePromise = null; // clear so the next expiry triggers a real refetch
       return cities;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
