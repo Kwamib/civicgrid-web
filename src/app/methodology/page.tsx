@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
     <section className="grid gap-3 border-t border-line py-7 sm:grid-cols-[56px_1fr]">
-      <div className="font-serif text-3xl leading-none text-cobalt" aria-hidden="true">{n}</div>
+      <div className="font-serif text-[29px] text-cobalt font-bold leading-[1.2]" aria-hidden="true">{n}</div>
       <div>
-        <h2 className="font-serif text-[26px] leading-tight text-ink">{title}</h2>
+        <h2 className="font-serif text-[29px] text-ink font-bold leading-[1.2]">{title}</h2>
         <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-muted">{children}</div>
       </div>
     </section>

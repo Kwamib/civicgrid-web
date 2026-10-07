@@ -31,7 +31,7 @@ export function PageHeading({ eyebrow, title, intro }: { eyebrow?: ReactNode; ti
   return (
     <div className="mb-8">
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <h1 className="font-serif text-4xl leading-[1.1] tracking-tight text-ink sm:text-5xl">{title}</h1>
+      <h1 className="font-serif text-[32px] font-bold leading-[1.2] tracking-[-1px] text-ink sm:text-[42px]">{title}</h1>
       {intro ? <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">{intro}</p> : null}
     </div>
   );

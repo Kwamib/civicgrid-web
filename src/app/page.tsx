@@ -33,7 +33,7 @@ export default function Home() {
         <section className="mx-auto max-w-[1400px] px-4 pb-14 sm:px-6 lg:px-8">
           <div className="grid items-center gap-8 rounded-lg bg-navy p-6 text-white sm:p-8 lg:grid-cols-2 lg:gap-10 [&>*]:min-w-0">
             <div>
-              <h2 className="font-serif text-[30px] leading-tight">The same data, ready for your application.</h2>
+              <h2 className="font-serif text-[29px] font-bold leading-[1.2]">The same data, ready for your application.</h2>
               <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-[#c3d4e6]">
                 A REST API with a free tier. Every city row carries its verification fields, so your app can show
                 how fresh a record is instead of guessing.

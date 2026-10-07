@@ -38,7 +38,7 @@ export default async function StatesIndexPage() {
             Browse by state
           </div>
           <h1
-            className="text-4xl md:text-5xl font-normal leading-[1.1] tracking-tight mb-3"
+            className="text-4xl md:text-5xl leading-[1.1] tracking-tight mb-3 font-bold"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             Cities &amp; Mayors by State
@@ -65,7 +65,7 @@ export default async function StatesIndexPage() {
                 >
                   <div className="flex items-baseline justify-between gap-2 mb-1">
                     <span
-                      className="text-lg font-normal group-hover:text-slate-900 transition"
+                      className="text-lg group-hover:text-slate-900 transition font-bold"
                       style={{ fontFamily: "var(--font-serif)" }}
                     >
                       {s.state_name}

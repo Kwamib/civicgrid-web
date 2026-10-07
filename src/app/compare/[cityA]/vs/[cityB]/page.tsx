@@ -75,7 +75,7 @@ export default async function ComparePage({
         <div className="mx-auto max-w-3xl px-6">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
             <CityHead city={a} align="right" />
-            <div className="text-slate-300 text-lg" style={{ fontFamily: "var(--font-serif)" }}>vs</div>
+            <div className="text-slate-300 text-lg font-bold" style={{ fontFamily: "var(--font-serif)" }}>vs</div>
             <CityHead city={b} align="left" />
           </div>
         </div>
@@ -116,7 +116,7 @@ function CityHead({ city, align }: { city: City; align: "left" | "right" }) {
   return (
     <div className={`flex flex-col ${alignClass}`}>
       <div className="text-[11px] text-slate-500 uppercase tracking-wide mb-1">{city.state_name}</div>
-      <Link href={`/cities/${citySlug(city.city, city.state_code)}`} className="text-2xl md:text-3xl font-normal leading-tight hover:text-slate-600 transition" style={{ fontFamily: "var(--font-serif)" }}>
+      <Link href={`/cities/${citySlug(city.city, city.state_code)}`} className="text-2xl md:text-3xl leading-tight hover:text-slate-600 transition font-bold" style={{ fontFamily: "var(--font-serif)" }}>
         {city.city}
       </Link>
       <div className="text-sm text-slate-600 mt-1">{city.leader_name || "—"}</div>

@@ -69,7 +69,7 @@ export default async function StateDetailPage({
           <div className="text-xs text-slate-500 tracking-wider uppercase font-medium mb-3">
             State · {state.state_code}
           </div>
-          <h1 className="text-4xl md:text-5xl font-normal leading-[1.1] tracking-tight mb-2" style={{ fontFamily: "var(--font-serif)" }}>
+          <h1 className="text-4xl md:text-5xl leading-[1.1] tracking-tight mb-2 font-bold" style={{ fontFamily: "var(--font-serif)" }}>
             {state.state_name}
           </h1>
           <p className="text-lg text-slate-600 mb-6">
@@ -138,7 +138,7 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
   return (
     <section className="py-10 border-t border-slate-200">
       <div className="mx-auto max-w-3xl px-6">
-        <h2 className="text-2xl font-normal mb-1" style={{ fontFamily: "var(--font-serif)" }}>{title}</h2>
+        <h2 className="text-2xl mb-1 font-bold" style={{ fontFamily: "var(--font-serif)" }}>{title}</h2>
         {subtitle ? <p className="text-sm text-slate-500 mb-6">{subtitle}</p> : null}
         {children}
       </div>

@@ -32,7 +32,7 @@ export default async function DashboardPage() {
         <div className="mb-10 flex items-start justify-between gap-6">
           <div>
             <h1
-              className="text-4xl md:text-5xl font-normal tracking-tight"
+              className="text-4xl md:text-5xl tracking-tight font-bold"
               style={{ fontFamily: "var(--font-serif)" }}
             >
               Welcome back, {displayName}
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
         {/* Account section */}
         <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2
-            className="text-xl mb-4"
+            className="text-xl mb-4 font-bold"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             Account

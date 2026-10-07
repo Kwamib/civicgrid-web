@@ -4,10 +4,11 @@
  * CivicGrid design tokens: navy navigation, cobalt actions, white surfaces,
  * slate filter panels. Fixed light mode (see layout.tsx).
  *
- * Fonts come from next/font in layout.tsx as --font-inter / --font-instrument /
- * --font-jetbrains. They are mapped onto Tailwind's font-sans / font-serif /
- * font-mono here AND on :root, so legacy inline `var(--font-serif)` styles keep
- * working.
+ * Fonts match the approved reference exactly: system UI for text and
+ * controls, Georgia for headings, the platform monospace for code. No web
+ * fonts are downloaded. The stacks are defined for Tailwind (font-sans /
+ * font-serif / font-mono) AND on :root, so legacy inline `var(--font-serif)`
+ * styles keep working.
  */
 @theme {
   --color-navy: #102840;
@@ -15,22 +16,22 @@
   --color-cobalt: #0869ee;
   --color-cobalt-dark: #0756c4;
   --color-ink: #11223a;
-  --color-muted: #5b6c83;
+  --color-muted: #62738a;
   --color-line: #dae3ed;
   --color-panel: #f5f8fc;
   --color-sky: #9bd4ff;
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: ui-monospace, monospace;
 }
 
 :root {
   --background: #ffffff;
   --foreground: #11223a;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: ui-monospace, monospace;
   color-scheme: light;
 }
 
@@ -47,7 +48,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font: 16px/1.6 var(--font-sans);
 }
 
 /* Visible keyboard focus everywhere; mouse clicks don't show the ring. */

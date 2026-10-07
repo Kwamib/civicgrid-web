@@ -10,7 +10,7 @@ export function NavLinks({ items }: { items: NavItem[] }) {
   return (
     <nav
       aria-label="Primary"
-      className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto whitespace-nowrap md:order-none md:mx-0 md:w-auto md:flex-1 md:gap-2"
+      className="order-3 flex w-full gap-5 overflow-x-auto whitespace-nowrap md:order-none md:ml-[35px] md:w-auto md:flex-1 md:gap-7"
     >
       {items.map((item) => {
         const active =
@@ -22,9 +22,7 @@ export function NavLinks({ items }: { items: NavItem[] }) {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-md px-2.5 py-1.5 text-sm transition ${
-              active ? "text-sky" : "text-white/85 hover:bg-white/10 hover:text-white"
-            }`}
+            className={`py-1 text-[13px] hover:underline md:text-sm ${active ? "text-sky" : "text-white"}`}
           >
             {item.label}
           </Link>

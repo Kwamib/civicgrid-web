@@ -58,7 +58,7 @@ export function KeyManager({ keys }: { keys: KeyInfo[] }) {
     <section className="space-y-6">
       <div>
         <h2
-          className="text-2xl mb-2"
+          className="text-2xl mb-2 font-bold"
           style={{ fontFamily: "var(--font-serif)" }}
         >
           API Keys

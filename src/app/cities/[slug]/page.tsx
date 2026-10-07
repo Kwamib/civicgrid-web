@@ -87,7 +87,7 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
         <div className="mb-8 mt-6">
           <Eyebrow>City profile · {city.city_type || "City"}</Eyebrow>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="font-serif text-4xl leading-[1.1] tracking-tight text-ink sm:text-5xl">
+            <h1 className="font-serif text-[32px] font-bold leading-[1.2] tracking-[-1px] text-ink sm:text-[42px]">
               {city.city}, {city.state_name}
             </h1>
             <StatusBadge tone={v.tone}>{v.label}</StatusBadge>
@@ -99,7 +99,7 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
 
         <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] [&>*]:min-w-0">
           <Card>
-            <h2 className="mb-5 font-serif text-[28px] leading-tight text-ink">City leadership</h2>
+            <h2 className="mb-5 font-serif text-[29px] text-ink font-bold leading-[1.2]">City leadership</h2>
             <dl className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
               <Def term="Leader" value={city.leader_name || "No leader on record"} />
               <Def term="Role" value={city.leader_title || "Title not recorded"} />
@@ -151,7 +151,7 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
           </Card>
 
           <Card>
-            <h2 className="mb-4 font-serif text-[22px] leading-tight text-ink">Source &amp; verification</h2>
+            <h2 className="mb-4 font-serif text-[22px] text-ink font-bold leading-[1.2]">Source &amp; verification</h2>
             <ul className="space-y-3 text-sm">
               <SourceLink label="Verification source" href={sourceUrl} empty="No source recorded for the last verification" />
               <SourceLink label="Official leadership page" href={officialPage} empty="Not found yet" />
@@ -176,7 +176,7 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <Card>
-            <h2 className="mb-1 font-serif text-[22px] text-ink">Demographics</h2>
+            <h2 className="mb-1 font-serif text-[22px] text-ink font-bold leading-[1.2]">Demographics</h2>
             <p className="mb-4 text-[13px] text-muted">Census Bureau data for the city</p>
             <DataList
               items={[
@@ -191,7 +191,7 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
             />
           </Card>
           <Card>
-            <h2 className="mb-1 font-serif text-[22px] text-ink">City government</h2>
+            <h2 className="mb-1 font-serif text-[22px] text-ink font-bold leading-[1.2]">City government</h2>
             <p className="mb-4 text-[13px] text-muted">Budget and contact</p>
             <DataList
               items={[
@@ -212,7 +212,7 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
 
         <section className="mt-5 grid items-center gap-6 rounded-lg bg-navy p-6 text-white sm:p-8 lg:grid-cols-[1fr_1.2fr] [&>*]:min-w-0">
           <div>
-            <h2 className="font-serif text-[26px] leading-tight">Use this record in your app</h2>
+            <h2 className="font-serif text-[29px] font-bold leading-[1.2]">Use this record in your app</h2>
             <p className="mt-2 text-[15px] text-[#c3d4e6]">
               The same leadership and verification fields are available from the API.
             </p>
@@ -286,7 +286,7 @@ function HistoryCard({ history }: { history: CityHistory }) {
   const { leadership_history: leaders, published_changes: changes } = history;
   return (
     <Card className="mt-5">
-      <h2 className="mb-1 font-serif text-[28px] leading-tight text-ink">Record history</h2>
+      <h2 className="mb-1 font-serif text-[29px] text-ink font-bold leading-[1.2]">Record history</h2>
       <p className="mb-5 text-[13px] text-muted">
         Published records only. Possible changes still under review are not shown here.
       </p>

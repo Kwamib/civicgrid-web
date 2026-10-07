@@ -122,7 +122,7 @@ export function ReviewClient({
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-line px-6 py-14 text-center">
-          <h2 className="font-serif text-2xl text-ink">
+          <h2 className="font-serif text-[22px] text-ink font-bold leading-[1.2]">
             {tab === "pending" ? "Queue is clear" : "No re-checks waiting"}
           </h2>
           <p className="mt-2 text-sm text-muted">
@@ -133,7 +133,7 @@ export function ReviewClient({
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,0.85fr)_1.4fr]">
           <section aria-label="Findings" className="rounded-lg border border-line bg-white">
             <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
-              <h2 className="font-serif text-xl text-ink">Findings</h2>
+              <h2 className="font-serif text-[22px] text-ink font-bold leading-[1.2]">Findings</h2>
               <span className="text-xs text-muted">
                 {items.length}
                 {total > items.length ? ` of ${total}` : ""} · largest cities first
@@ -189,7 +189,7 @@ export function ReviewClient({
 function Metric({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-lg border border-line bg-white px-5 py-4">
-      <div className="tabular font-serif text-3xl leading-none text-ink">{value.toLocaleString("en-US")}</div>
+      <div className="tabular text-[30px] font-bold leading-none text-ink">{value.toLocaleString("en-US")}</div>
       <div className="mt-1.5 text-[13px] text-muted">{label}</div>
     </div>
   );
@@ -265,7 +265,7 @@ function FindingDetail({ p, onDone }: { p: Proposal; onDone: (p: Proposal, msg: 
     <section aria-label={`Finding for ${p.city}, ${p.state_code}`} className="rounded-lg border border-line border-t-[5px] border-t-cobalt bg-white p-5 sm:p-6">
       <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-cobalt">{kind.label}</div>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h2 className="font-serif text-[30px] leading-tight text-ink">
+        <h2 className="font-serif text-[29px] text-ink font-bold leading-[1.2]">
           {p.city}, {p.state_code}
         </h2>
         <ConfidenceBadge level={p.confidence} />
@@ -300,7 +300,7 @@ function FindingDetail({ p, onDone }: { p: Proposal; onDone: (p: Proposal, msg: 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <div className="rounded-md border border-line bg-panel p-4">
           <div className="text-xs text-muted">Published record</div>
-          <div className="mt-1 font-serif text-[22px] leading-tight text-ink">{currentName ?? "No leader on record"}</div>
+          <div className="mt-1 font-serif text-[22px] text-ink font-bold leading-[1.2]">{currentName ?? "No leader on record"}</div>
           <div className="text-[13px] text-muted">{currentTitle ?? (supportsConcurrency ? "Title not recorded" : "")}</div>
           <div className="mt-2 text-xs text-muted">
             {formatDate(p.current_last_verified_at) ? `Verified ${formatDate(p.current_last_verified_at)}` : "Never verified"}
@@ -308,7 +308,7 @@ function FindingDetail({ p, onDone }: { p: Proposal; onDone: (p: Proposal, msg: 
         </div>
         <div className="rounded-md border border-[#bcd5f7] bg-[#f3f8ff] p-4">
           <div className="text-xs text-muted">Verifier found</div>
-          <div className="mt-1 font-serif text-[22px] leading-tight text-ink">{p.web_mayor ?? "No name found"}</div>
+          <div className="mt-1 font-serif text-[22px] text-ink font-bold leading-[1.2]">{p.web_mayor ?? "No name found"}</div>
           <div className="text-[13px] text-muted">{p.proposed_title ?? "Title not captured"}</div>
         </div>
       </div>

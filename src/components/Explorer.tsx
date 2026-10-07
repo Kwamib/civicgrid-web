@@ -1,17 +1,15 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { CitySummary } from "@/lib/cities";
 import { citySlug } from "@/lib/slug";
 import {
   POPULATION_BANDS,
   SORT_OPTIONS,
-  compareCities,
   displayHost,
   formatDate,
   formatPopulation,
-  inPopulationBand,
   safeHttpUrl,
   verificationSummary,
   type PopulationBand,
@@ -21,28 +19,14 @@ import { StatusBadge } from "@/components/ui";
 
 const PAGE_SIZE = 10;
 
-/** Relevance score for a search; lower is better, null = no match. */
-function matchScore(c: CitySummary, q: string): number | null {
-  const city = c.city.toLowerCase();
-  const stateCode = c.state_code.toLowerCase();
-  const stateName = (c.state_name || "").toLowerCase();
-  const leader = (c.leader_name || "").toLowerCase();
-
-  // "Laurel, MD" or "Laurel, Maryland": city part must match AND state must match.
-  if (q.includes(",")) {
-    const [cityPart, statePart] = q.split(",").map((x) => x.trim());
-    if (statePart && !(stateCode === statePart || stateName.startsWith(statePart))) return null;
-    if (!city.includes(cityPart)) return null;
-    return city === cityPart ? 0 : city.startsWith(cityPart) ? 1 : 2;
-  }
-  if (city === q) return 0;
-  if (city.startsWith(q)) return 1;
-  if (city.includes(q)) return 2;
-  if (stateCode === q) return 3;
-  if (stateName.includes(q)) return 4;
-  if (leader.includes(q)) return 5;
-  return null;
-}
+type SearchResponse = {
+  data: CitySummary[];
+  total: number;
+  page: number;
+  pageCount: number;
+  datasetCount: number;
+  states: [string, string][];
+};
 
 function pageList(current: number, total: number): (number | "gap")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -57,66 +41,65 @@ function pageList(current: number, total: number): (number | "gap")[] {
 }
 
 export function Explorer() {
-  const [all, setAll] = useState<CitySummary[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [stateCode, setStateCode] = useState("");
   const [band, setBand] = useState<PopulationBand>("");
   const [sort, setSort] = useState<SortKey>("largest");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const deferredQuery = useDeferredValue(query);
+  const [result, setResult] = useState<SearchResponse | null>(null);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
-  // State is only set in async callbacks, so this is safe to call from an effect.
-  const fetchCities = useCallback(() => {
-    return fetch("/api/search")
+  // Debounce typing so each keystroke doesn't hit the server.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query.trim()), 200);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  // The server filters and sorts the full dataset; only this page comes back.
+  const requestKey = new URLSearchParams({
+    q: debouncedQuery,
+    state: stateCode,
+    pop: band,
+    sort,
+    page: String(page),
+    pageSize: String(PAGE_SIZE),
+  }).toString();
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch(`/api/search?${requestKey}`, { signal: ctrl.signal })
       .then((r) => {
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
       })
-      .then((json) => {
-        setAll(json.data || []);
-        setStatus("ready");
+      .then((json: SearchResponse) => {
+        setResult(json);
+        setLoadedKey(requestKey);
+        setErrorKey(null);
       })
-      .catch(() => setStatus("error"));
-  }, []);
+      .catch((e) => {
+        if (e?.name !== "AbortError") setErrorKey(requestKey);
+      });
+    return () => ctrl.abort();
+  }, [requestKey, retryNonce]);
 
-  useEffect(() => {
-    fetchCities();
-  }, [fetchCities]);
+  const status: "loading" | "ready" | "error" =
+    errorKey === requestKey ? "error" : result ? "ready" : "loading";
+  const refreshing = status === "ready" && loadedKey !== requestKey;
+  const states = result?.states ?? [];
+  const pageRows = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const pageCount = result?.pageCount ?? 1;
+  const currentPage = result?.page ?? 1;
+  const selected = pageRows.find((c) => c.id === selectedId) ?? pageRows[0] ?? null;
 
   function retry() {
-    setStatus("loading");
-    fetchCities();
+    setRetryNonce((n) => n + 1);
   }
-
-  const states = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const c of all) if (c.state_code) m.set(c.state_code, c.state_name || c.state_code);
-    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [all]);
-
-  // Filter and sort the FULL dataset first; paginate afterwards.
-  const results = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    const cmp = compareCities<CitySummary>(sort);
-    const rows: { c: CitySummary; score: number }[] = [];
-    for (const c of all) {
-      if (stateCode && c.state_code !== stateCode) continue;
-      if (!inPopulationBand(c.population, band)) continue;
-      const score = q ? matchScore(c, q) : 0;
-      if (score === null) continue;
-      rows.push({ c, score });
-    }
-    rows.sort((a, b) => a.score - b.score || cmp(a.c, b.c));
-    return rows.map((r) => r.c);
-  }, [all, deferredQuery, stateCode, band, sort]);
-
-  const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
-  const pageRows = results.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const selected =
-    results.find((c) => c.id === selectedId) ?? pageRows[0] ?? null;
 
   function resetPaging() {
     setPage(1);
@@ -124,6 +107,7 @@ export function Explorer() {
 
   function clearAll() {
     setQuery("");
+    setDebouncedQuery("");
     setStateCode("");
     setBand("");
     setSort("largest");
@@ -143,16 +127,16 @@ export function Explorer() {
   const filtersActive = Boolean(query.trim() || stateCode || band || sort !== "largest");
   const stateLabel = states.find(([code]) => code === stateCode)?.[1];
   const heading = stateLabel ? `Cities in ${stateLabel}` : "All cities";
-  const firstShown = results.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
-  const lastShown = Math.min(currentPage * PAGE_SIZE, results.length);
+  const firstShown = total ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+  const lastShown = Math.min(currentPage * PAGE_SIZE, total);
 
   return (
     <>
       <section className="px-4 pb-7 pt-10 text-center sm:px-6 sm:pt-12">
-        <h1 className="font-serif text-[40px] leading-[1.05] tracking-tight text-ink sm:text-[52px]">
+        <h1 className="font-serif text-[32px] font-bold leading-[1.2] tracking-[-1px] text-ink sm:text-[42px]">
           Find the people leading your city.
         </h1>
-        <p className="mx-auto mt-3 max-w-xl text-base text-muted sm:text-lg">
+        <p className="mx-auto mt-0 max-w-xl text-base text-muted sm:text-lg">
           Search city governments. Inspect the sources. Build with civic data.
         </p>
         <form
@@ -180,16 +164,16 @@ export function Explorer() {
               }}
               placeholder="Search a city, leader, or state — e.g. Laurel, MD"
               autoComplete="off"
-              className="h-14 w-full rounded-md border border-[#cdd8e5] bg-white pl-12 pr-4 text-base text-ink shadow-sm placeholder:text-[#8a9bb0] focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt/30"
+              className="h-[54px] w-full rounded-md border border-[#cdd8e5] bg-white pl-12 pr-4 text-sm text-ink sm:text-[17px] placeholder:text-[#8a9bb0] focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt/30"
             />
           </div>
-          <button type="submit" className="h-14 rounded-md bg-cobalt px-5 text-sm font-semibold text-white transition hover:bg-cobalt-dark sm:px-7">
+          <button type="submit" className="h-[54px] rounded-md border border-cobalt bg-cobalt px-[15px] text-sm font-semibold text-white hover:brightness-95 sm:px-7">
             Search
           </button>
         </form>
         <p className="mt-3 text-[13px] text-muted">
           {status === "ready"
-            ? `${all.length.toLocaleString("en-US")} US cities · every record shows its source and when it was last verified`
+            ? `${(result?.datasetCount ?? 0).toLocaleString("en-US")} US cities · every record shows its source and when it was last verified`
             : "Loading city records…"}
         </p>
       </section>
@@ -197,7 +181,7 @@ export function Explorer() {
       <div className="mx-auto grid max-w-[1400px] items-start gap-4 px-4 pb-12 sm:px-6 lg:px-8 md:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_320px]">
         {/* Filters */}
         <aside aria-label="Filters" className="rounded-lg border border-line bg-panel p-5">
-          <h2 className="mb-5 font-serif text-[22px] leading-none text-ink">Refine results</h2>
+          <h2 className="mb-6 font-serif text-[22px] text-ink font-bold leading-[1.2]">Refine results</h2>
           <div className="grid grid-cols-2 gap-x-3 gap-y-4 md:grid-cols-1">
             <Field label="State" htmlFor="f-state">
               <select id="f-state" value={stateCode} onChange={(e) => { setStateCode(e.target.value); resetPaging(); }} className={selectCls}>
@@ -238,9 +222,9 @@ export function Explorer() {
         {/* Results */}
         <section aria-labelledby="results-heading" className="min-w-0 rounded-lg border border-line bg-white p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="results-heading" className="font-serif text-[28px] leading-tight text-ink">{heading}</h2>
+            <h2 id="results-heading" className="font-serif text-[29px] text-ink font-bold leading-[1.2]">{heading}</h2>
             <span className="text-[13px] text-muted" aria-live="polite">
-              {status === "ready" ? `${results.length.toLocaleString("en-US")} ${results.length === 1 ? "city" : "cities"}${query.trim() ? " · best matches first" : ""}` : ""}
+              {status === "ready" ? `${total.toLocaleString("en-US")} ${total === 1 ? "city" : "cities"}${debouncedQuery ? " · best matches first" : ""}${refreshing ? " · updating…" : ""}` : ""}
             </span>
           </div>
 
@@ -254,7 +238,7 @@ export function Explorer() {
               <table className="w-full border-collapse text-left text-sm sm:min-w-[520px]">
                 <caption className="sr-only">City search results. Select a city to see its details.</caption>
                 <thead>
-                  <tr className="bg-[#f5f7fb] text-[11px] uppercase tracking-[0.04em] text-muted">
+                  <tr className="bg-[#f5f7fb] text-[11px] uppercase tracking-[0.4px] text-muted">
                     <th scope="col" className="px-2 py-3 sm:px-3 font-semibold">City</th>
                     <th scope="col" className="hidden px-2 py-3 sm:px-3 font-semibold sm:table-cell">State</th>
                     <th scope="col" className="px-2 py-3 sm:px-3 font-semibold">Leadership</th>
@@ -314,7 +298,7 @@ export function Explorer() {
                       })}
                 </tbody>
               </table>
-              {status === "ready" && results.length === 0 ? (
+              {status === "ready" && !refreshing && total === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-muted">
                   No cities match{query.trim() ? <> &ldquo;{query.trim()}&rdquo;</> : null}. Try another spelling or state, or{" "}
                   <button type="button" onClick={clearAll} className="font-medium text-cobalt hover:underline">clear all filters</button>.
@@ -323,10 +307,10 @@ export function Explorer() {
             </div>
           )}
 
-          {status === "ready" && results.length > 0 ? (
+          {status === "ready" && total > 0 ? (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <span className="text-[13px] text-muted">
-                Showing {firstShown.toLocaleString("en-US")}–{lastShown.toLocaleString("en-US")} of {results.length.toLocaleString("en-US")}
+                Showing {firstShown.toLocaleString("en-US")}–{lastShown.toLocaleString("en-US")} of {total.toLocaleString("en-US")}
               </span>
               <nav aria-label="Pagination" className="flex items-center gap-1">
                 <PagerButton disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} label="Previous page">‹</PagerButton>
@@ -353,7 +337,7 @@ export function Explorer() {
         >
           {selected ? <CityPanel c={selected} /> : (
             <div>
-              <h2 className="font-serif text-2xl text-ink">Select a city</h2>
+              <h2 className="font-serif text-[22px] text-ink font-bold leading-[1.2]">Select a city</h2>
               <p className="mt-2 text-sm text-muted">Choose a result to see its leadership, source, and verification details.</p>
             </div>
           )}
@@ -364,12 +348,12 @@ export function Explorer() {
 }
 
 const selectCls =
-  "h-11 w-full rounded-md border border-[#cdd8e5] bg-white px-3 text-[15px] text-ink focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt/30";
+  "min-h-[44px] w-full rounded-md border border-[#cdd8e5] bg-white px-3 py-[11px] text-[15px] text-ink focus:outline-2 focus:outline-offset-2 focus:outline-cobalt/40";
 
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-semibold text-ink">{label}</label>
+      <label htmlFor={htmlFor} className="mb-[7px] block text-sm font-semibold text-ink">{label}</label>
       {children}
     </div>
   );
@@ -405,7 +389,7 @@ function CityPanel({ c }: { c: CitySummary }) {
 
   return (
     <div>
-      <h2 className="font-serif text-[26px] leading-tight text-ink">
+      <h2 className="font-serif text-[25px] text-ink font-bold leading-[1.2]">
         {c.city}, {c.state_name || c.state_code}
       </h2>
       <p className="mt-1 text-[13px] text-muted">
