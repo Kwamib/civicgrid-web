@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import type { City } from "@/lib/cities";
+import { useEffect, useRef, useState } from "react";
+import type { CitySummary as City } from "@/lib/cities";
 
 function getInitials(name: string): string {
   if (!name) return "—";
@@ -21,14 +21,10 @@ function PartyBadge({ party }: { party: string }) {
 
 export function CityPicker({
   label,
-  cities,
-  loading,
   selected,
   onSelect,
 }: {
   label: string;
-  cities: City[];
-  loading: boolean;
   selected: City | null;
   onSelect: (city: City | null) => void;
 }) {
@@ -36,19 +32,29 @@ export function CityPicker({
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const results = useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase().trim();
-    return cities
-      .filter(
-        (c) =>
-          c.city.toLowerCase().includes(q) ||
-          c.state_name.toLowerCase().includes(q) ||
-          c.state_code.toLowerCase() === q ||
-          (c.leader_name && c.leader_name.toLowerCase().includes(q))
-      )
-      .slice(0, 6);
-  }, [query, cities]);
+  const [results, setResults] = useState<City[]>([]);
+  const [resultsFor, setResultsFor] = useState("");
+
+  // Ask the server for the top matches; the full city list never loads in the browser.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      fetch(`/api/search?${new URLSearchParams({ q, pageSize: "6" })}`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { data: [] }))
+        .then((json) => {
+          setResults(json.data || []);
+          setResultsFor(q);
+        })
+        .catch(() => {});
+    }, 200);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [query]);
+  const loading = Boolean(query.trim()) && resultsFor !== query.trim();
 
   if (selected) {
     return (
@@ -85,14 +91,15 @@ export function CityPicker({
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder={loading ? "Loading cities..." : "Search a city..."}
-          disabled={loading}
+          placeholder="Search a city..."
           className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
         />
       </div>
       {open && query.trim() && (
         <div className="mt-1.5 bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-          {results.length === 0 ? (
+          {loading ? (
+            <div className="px-3 py-4 text-xs text-slate-500 text-center">Searching…</div>
+          ) : results.length === 0 ? (
             <div className="px-3 py-4 text-xs text-slate-500 text-center">No results for &ldquo;{query}&rdquo;</div>
           ) : (
             results.map((c, i) => (

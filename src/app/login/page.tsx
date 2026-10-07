@@ -86,7 +86,7 @@ function LoginForm() {
               C
             </div>
             <span
-              className="text-2xl font-medium tracking-tight group-hover:text-slate-700 transition"
+              className="text-2xl font-medium tracking-tight group-hover:text-slate-700 transition font-bold"
               style={{ fontFamily: "var(--font-serif)" }}
             >
               CivicGrid
@@ -101,7 +101,7 @@ function LoginForm() {
         {magicLinkSent ? (
           <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
             <h2
-              className="text-xl mb-2"
+              className="text-xl mb-2 font-bold"
               style={{ fontFamily: "var(--font-serif)" }}
             >
               Check your email

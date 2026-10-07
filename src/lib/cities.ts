@@ -1,4 +1,5 @@
-const API_BASE = "https://api.civicgrid.org";
+// Override for local development against a local API; defaults to production.
+const API_BASE = process.env.CIVICGRID_API_BASE || "https://api.civicgrid.org";
 const API_KEY = process.env.CIVICGRID_API_KEY;
 
 export type City = {
@@ -9,7 +10,7 @@ export type City = {
   county: string;
   metro_area: string;
   city_type: string;
-  population: number;
+  population: number | null;
   median_household_income: number;
   median_age: number;
   land_area_sq_mi: number;
@@ -23,7 +24,60 @@ export type City = {
   leader_party: string;
   leader_year_elected: number;
   leader_next_election: number;
+  // Verification fields (API migration 007+). Optional: older API versions
+  // don't send them, and the UI must show "not available" rather than guess.
+  governance_type?: string | null;
+  official_leader_page?: string | null;
+  leader_last_verified_at?: string | null;
+  last_verified_method?: "human" | "automated" | null;
+  verification_source_url?: string | null;
+  last_checked_at?: string | null;
+  last_check_result?: "confirmed" | "under_review" | "check_failed" | null;
 };
+
+/** The lean row the explorer and pickers need. Keeps the /api/search payload small. */
+export type CitySummary = Pick<
+  City,
+  | "id"
+  | "city"
+  | "state_code"
+  | "state_name"
+  | "population"
+  | "county"
+  | "leader_name"
+  | "leader_title"
+  | "leader_party"
+  | "leader_year_elected"
+  | "governance_type"
+  | "leader_last_verified_at"
+  | "last_verified_method"
+  | "verification_source_url"
+  | "official_leader_page"
+  | "last_checked_at"
+  | "last_check_result"
+>;
+
+export function toSummary(c: City): CitySummary {
+  return {
+    id: c.id,
+    city: c.city,
+    state_code: c.state_code,
+    state_name: c.state_name,
+    population: c.population ?? null,
+    county: c.county,
+    leader_name: c.leader_name,
+    leader_title: c.leader_title,
+    leader_party: c.leader_party,
+    leader_year_elected: c.leader_year_elected,
+    governance_type: c.governance_type ?? null,
+    leader_last_verified_at: c.leader_last_verified_at ?? null,
+    last_verified_method: c.last_verified_method ?? null,
+    verification_source_url: c.verification_source_url ?? null,
+    official_leader_page: c.official_leader_page ?? null,
+    last_checked_at: c.last_checked_at ?? null,
+    last_check_result: c.last_check_result ?? null,
+  };
+}
 
 /**
  * Process-level cache of the cities list, with a TTL.
@@ -93,4 +147,52 @@ export async function getAllCities(): Promise<City[]> {
   })();
 
   return cachePromise;
+}
+
+export type LeadershipHistoryRow = {
+  id: number;
+  full_name: string;
+  leader_title: string | null;
+  is_current: boolean;
+  recorded_at: string | null;
+  last_verified_at: string | null;
+};
+
+export type PublishedChange = {
+  action: "accept" | "correct";
+  before_name: string | null;
+  before_title: string | null;
+  after_name: string | null;
+  after_title: string | null;
+  source_url: string | null;
+  created_at: string;
+};
+
+export type CityHistory = {
+  leadership_history: LeadershipHistoryRow[];
+  published_changes: PublishedChange[];
+};
+
+/**
+ * Published leadership history for one city (GET /cities/{id}).
+ * Returns null when unavailable (request failed, or an older API that doesn't
+ * send history yet), so the page can hide the section instead of inventing one.
+ */
+export async function getCityHistory(cityId: number): Promise<CityHistory | null> {
+  if (!API_KEY) return null;
+  try {
+    const res = await fetch(`${API_BASE}/cities/${cityId}`, {
+      headers: { Authorization: `Bearer ${API_KEY}` },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!Array.isArray(json.leadership_history)) return null;
+    return {
+      leadership_history: json.leadership_history,
+      published_changes: Array.isArray(json.published_changes) ? json.published_changes : [],
+    };
+  } catch {
+    return null;
+  }
 }

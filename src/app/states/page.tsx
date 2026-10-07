@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { stateSlug } from "@/lib/slug";
 import { getAllStates } from "@/lib/states";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Cities & Mayors by State · CivicGrid",
@@ -37,7 +38,7 @@ export default async function StatesIndexPage() {
             Browse by state
           </div>
           <h1
-            className="text-4xl md:text-5xl font-normal leading-[1.1] tracking-tight mb-3"
+            className="text-4xl md:text-5xl leading-[1.1] tracking-tight mb-3 font-bold"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             Cities &amp; Mayors by State
@@ -64,7 +65,7 @@ export default async function StatesIndexPage() {
                 >
                   <div className="flex items-baseline justify-between gap-2 mb-1">
                     <span
-                      className="text-lg font-normal group-hover:text-slate-900 transition"
+                      className="text-lg group-hover:text-slate-900 transition font-bold"
                       style={{ fontFamily: "var(--font-serif)" }}
                     >
                       {s.state_name}
@@ -83,24 +84,7 @@ export default async function StatesIndexPage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 py-6">
-        <div className="mx-auto max-w-4xl px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-400">
-          <div>© 2026 CivicGrid · Built quietly. Shipped loudly.</div>
-          <div className="flex gap-5">
-            <Link href="/" className="hover:text-slate-700 transition">
-              Search
-            </Link>
-            <a
-              href="https://github.com/Kwamib"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-slate-700 transition"
-            >
-              GitHub
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

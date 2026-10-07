@@ -18,7 +18,7 @@ export default async function FixCityPage() {
       <main className="mx-auto max-w-3xl px-6 py-12">
         <div className="mb-8">
           <div className="text-xs text-slate-500 tracking-wider uppercase font-medium mb-2">Data quality</div>
-          <h1 className="text-4xl md:text-5xl font-normal tracking-tight" style={{ fontFamily: "var(--font-serif)" }}>
+          <h1 className="text-4xl md:text-5xl tracking-tight font-bold" style={{ fontFamily: "var(--font-serif)" }}>
             Fix a city
           </h1>
           <p className="mt-2 text-sm text-slate-500">

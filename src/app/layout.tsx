@@ -1,30 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-serif",
-  weight: "400",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "CivicGrid — Every US mayor, one API call away",
+  title: "CivicGrid — Find the people leading US cities",
   description:
-    "A REST API for every US mayor, city manager, and city government. 3,063 cities. Real-time leader data. Free tier, no credit card.",
+    "Search mayors and top officials across 3,000+ US cities, with the official source and verification date behind each record. Free REST API.",
   openGraph: {
     title: "CivicGrid",
-    description: "Every US mayor. One API call away.",
+    description: "US city leadership, with the evidence behind every record.",
     url: "https://www.civicgrid.org",
     siteName: "CivicGrid",
     type: "website",
@@ -40,17 +23,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <head>
-        {/* CivicGrid uses a fixed light-mode editorial design.
-            Tell the browser explicitly to render UI chrome (form controls,
-            scrollbars) in light mode regardless of OS preference. */}
+        {/* Fixed light-mode design: render form controls and scrollbars light
+            regardless of OS preference. */}
         <meta name="color-scheme" content="light" />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans text-ink">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:text-ink focus:shadow"
+        >
+          Skip to content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }
