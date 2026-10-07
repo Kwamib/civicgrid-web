@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAllCities } from "@/lib/cities";
+import { getAllCities, toSummary } from "@/lib/cities";
 
 export async function GET() {
   try {
     const cities = await getAllCities();
 
     return NextResponse.json(
-      { data: cities },
+      { data: cities.map(toSummary) },
       {
         headers: {
           "Cache-Control":

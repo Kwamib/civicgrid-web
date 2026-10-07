@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CityPicker } from "@/components/CityPicker";
 import { citySlug } from "@/lib/slug";
-import type { City } from "@/lib/cities";
+import type { CitySummary as City } from "@/lib/cities";
 
 export function CompareClient() {
   const router = useRouter();

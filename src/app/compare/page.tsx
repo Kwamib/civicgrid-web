@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { CompareClient } from "@/components/CompareClient";
 
 export const metadata: Metadata = {
@@ -19,15 +20,7 @@ export default function ComparePage() {
     <div className="min-h-screen bg-white text-slate-900">
       <Header />
       <CompareClient />
-      <footer className="border-t border-slate-200 py-6">
-        <div className="mx-auto max-w-2xl px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-400">
-          <div>© 2026 CivicGrid · Built quietly. Shipped loudly.</div>
-          <div className="flex gap-5">
-            <a href="/states" className="hover:text-slate-700 transition">States</a>
-            <a href="/" className="hover:text-slate-700 transition">Search</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

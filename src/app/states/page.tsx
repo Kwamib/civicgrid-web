@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { stateSlug } from "@/lib/slug";
 import { getAllStates } from "@/lib/states";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Cities & Mayors by State · CivicGrid",
@@ -83,24 +84,7 @@ export default async function StatesIndexPage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 py-6">
-        <div className="mx-auto max-w-4xl px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-400">
-          <div>© 2026 CivicGrid · Built quietly. Shipped loudly.</div>
-          <div className="flex gap-5">
-            <Link href="/" className="hover:text-slate-700 transition">
-              Search
-            </Link>
-            <a
-              href="https://github.com/Kwamib"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-slate-700 transition"
-            >
-              GitHub
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

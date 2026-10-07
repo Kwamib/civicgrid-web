@@ -2,7 +2,8 @@
 
 import { getCurrentUser } from "@/lib/auth";
 
-const API_BASE = "https://api.civicgrid.org";
+// Override for local development against a local API; defaults to production.
+const API_BASE = process.env.CIVICGRID_API_BASE || "https://api.civicgrid.org";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 export type CityRow = {

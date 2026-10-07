@@ -1,8 +1,20 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
+import { Brand } from "@/components/Brand";
+import { NavLinks, type NavItem } from "@/components/NavLinks";
+
+const NAV: NavItem[] = [
+  { href: "/", label: "Explore cities" },
+  { href: "/states", label: "States" },
+  { href: "/compare", label: "Compare" },
+  { href: "/developers", label: "API & docs" },
+  { href: "/methodology", label: "Methodology" },
+];
 
 export async function Header() {
   const user = await getCurrentUser();
+  const admin = isAdminEmail(user?.email);
 
   const displayName =
     user?.user_metadata?.full_name ||
@@ -10,68 +22,38 @@ export async function Header() {
     user?.email?.split("@")[0] ||
     null;
 
-  const avatarUrl =
-    user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const items = admin ? [...NAV, { href: "/admin/review", label: "Review queue" }] : NAV;
 
   return (
-    <header className="border-b border-slate-200">
-      <div className="mx-auto max-w-3xl px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div
-            className="w-7 h-7 rounded-md flex items-center justify-center text-white text-base"
-            style={{ background: "#1a2540", fontFamily: "var(--font-serif)" }}
-          >
-            C
-          </div>
-          <span
-            className="text-lg font-medium tracking-tight group-hover:text-slate-700 transition"
-            style={{ fontFamily: "var(--font-serif)" }}
-          >
-            CivicGrid
-          </span>
-        </Link>
-
-        <nav className="flex items-center gap-6 text-sm text-slate-500">
-          <Link
-            href="https://github.com/Kwamib/civicgrid-api"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-slate-900 transition hidden sm:inline"
-          >
-            API
-          </Link>
-          <Link
-            href="https://github.com/Kwamib/civicgrid-api#readme"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-slate-900 transition hidden sm:inline"
-          >
-            Docs
-          </Link>
+    <header className="bg-navy text-white">
+      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-8 gap-y-3 px-4 py-4 sm:px-6 md:flex-nowrap lg:px-8">
+        <Brand />
+        <NavLinks items={items} />
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
           {user ? (
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 text-white text-xs font-medium px-3.5 py-1.5 rounded-md hover:opacity-90 transition"
-              style={{ background: "#1a2540" }}
+              className="inline-flex min-h-10 items-center rounded-md border border-white/25 px-4 text-sm font-medium text-white transition hover:bg-white/10"
             >
-              {avatarUrl && (
-                <img src={avatarUrl} alt="" className="h-4 w-4 rounded-full" />
-              )}
-              <span className="hidden sm:inline">
-                {displayName ? "Hi, " + displayName.split(" ")[0] : "Dashboard"}
-              </span>
-              <span className="sm:hidden">Dashboard</span>
+              {displayName ? `Hi, ${String(displayName).split(" ")[0]}` : "Dashboard"}
             </Link>
           ) : (
-            <Link
-              href="/login"
-              className="text-white text-xs font-medium px-3.5 py-1.5 rounded-md hover:opacity-90 transition"
-              style={{ background: "#1a2540" }}
-            >
-              Sign in
-            </Link>
+            <>
+              <Link
+                href="/login"
+                className="hidden min-h-10 items-center rounded-md px-3 text-sm text-white/85 hover:text-white sm:inline-flex"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex min-h-10 items-center rounded-md bg-cobalt px-4 text-sm font-semibold text-white transition hover:bg-cobalt-dark"
+              >
+                Get API key
+              </Link>
+            </>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );

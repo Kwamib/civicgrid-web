@@ -1,27 +1,45 @@
 @import "tailwindcss";
 
+/*
+ * CivicGrid design tokens: navy navigation, cobalt actions, white surfaces,
+ * slate filter panels. Fixed light mode (see layout.tsx).
+ *
+ * Fonts come from next/font in layout.tsx as --font-inter / --font-instrument /
+ * --font-jetbrains. They are mapped onto Tailwind's font-sans / font-serif /
+ * font-mono here AND on :root, so legacy inline `var(--font-serif)` styles keep
+ * working.
+ */
+@theme {
+  --color-navy: #102840;
+  --color-navy-2: #183a5a;
+  --color-cobalt: #0869ee;
+  --color-cobalt-dark: #0756c4;
+  --color-ink: #11223a;
+  --color-muted: #5b6c83;
+  --color-line: #dae3ed;
+  --color-panel: #f5f8fc;
+  --color-sky: #9bd4ff;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #11223a;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
   color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* CivicGrid uses a fixed light-mode editorial design. Force light colors
-   regardless of OS dark-mode preference. Without this, browsers that respect
-   prefers-color-scheme (Firefox, Safari) flip the background to dark while
-   our component-level color choices stay light, leaving hero text and other
-   navy-on-white elements unreadable. */
+/* Fixed light mode regardless of OS preference (Firefox/Safari would
+   otherwise flip the background while component colors stay light). */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #ffffff;
-    --foreground: #171717;
+    --foreground: #11223a;
     color-scheme: light;
   }
 }
@@ -29,5 +47,25 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Visible keyboard focus everywhere; mouse clicks don't show the ring. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-cobalt);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import type { City } from "@/lib/cities";
+import type { CitySummary as City } from "@/lib/cities";
 
 function getInitials(name: string): string {
   if (!name) return "—";

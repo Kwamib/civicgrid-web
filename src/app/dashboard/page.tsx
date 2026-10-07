@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getUserKeys, signOut } from "./actions";
 import { KeyManager } from "./key-manager";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export const dynamic = "force-dynamic";
 
@@ -98,39 +99,23 @@ export default async function DashboardPage() {
         <KeyManager keys={keys ?? []} />
 
         {/* Help footer */}
-        <footer className="mt-12 pt-8 border-t border-slate-200 text-sm text-slate-500">
+        <section className="mt-12 border-t border-slate-200 pt-8 text-sm text-slate-500">
           <p className="mb-2">Need help getting started?</p>
-          <div
-            className="rounded-xl p-4 text-xs leading-relaxed overflow-x-auto shadow-sm"
-            style={{
-              background: "#1a2540",
-              color: "#e8eef5",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            <div style={{ color: "#6b7a99" }}>
-              $ curl https://api.civicgrid.org/cities?limit=5 \
-            </div>
-            <div style={{ color: "#6b7a99" }}>
-              {"    "}-H &quot;Authorization: Bearer cg_live_...&quot;
-            </div>
-          </div>
-
+          <pre className="overflow-x-auto rounded-md bg-[#142e49] p-4 font-mono text-xs leading-relaxed text-[#d4e5f5]">
+            <code>{`curl https://api.civicgrid.org/cities?limit=5 \\
+  -H "Authorization: Bearer cg_live_..."`}</code>
+          </pre>
           <div className="mt-6 flex gap-4">
-            <Link
-              href="https://github.com/Kwamib/civicgrid-api#readme"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-slate-900 transition"
-            >
-              Read docs →
+            <Link href="/developers" className="text-cobalt hover:underline">
+              Read the API docs →
             </Link>
-            <Link href="/" className="hover:text-slate-900 transition">
-              Back to home →
+            <Link href="/" className="text-cobalt hover:underline">
+              Back to the explorer →
             </Link>
           </div>
-        </footer>
+        </section>
       </main>
+      <Footer />
     </div>
   );
 }

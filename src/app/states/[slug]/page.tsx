@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { stateSlug, citySlug } from "@/lib/slug";
 import { getAllStates, getStateBySlug, TOP_CITIES_LIMIT } from "@/lib/states";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 export async function generateStaticParams() {
   const states = await getAllStates();
@@ -128,16 +129,7 @@ export default async function StateDetailPage({
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 py-6">
-        <div className="mx-auto max-w-3xl px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-400">
-          <div>© 2026 CivicGrid · Built quietly. Shipped loudly.</div>
-          <div className="flex gap-5">
-            <Link href="/states" className="hover:text-slate-700 transition">States</Link>
-            <Link href="/" className="hover:text-slate-700 transition">Search</Link>
-            <a href="https://github.com/Kwamib" target="_blank" rel="noopener noreferrer" className="hover:text-slate-700 transition">GitHub</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
