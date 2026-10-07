@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 
 // Override for local development against a local API; defaults to production.
 const API_BASE = process.env.CIVICGRID_API_BASE || "https://api.civicgrid.org";
+import { requireAdminUser } from "@/lib/admin";
+
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 export type CityRow = {
@@ -21,14 +23,6 @@ export type CityRow = {
   flagged_at?: string | null;
 };
 
-async function requireAdminUser() {
-  const user = await getCurrentUser();
-  const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim());
-  if (!user || !adminEmails.includes(user.email ?? "")) {
-    throw new Error("Not authorized");
-  }
-  return user;
-}
 
 export async function searchCities(q: string, onlyUnverified = false): Promise<CityRow[]> {
   await requireAdminUser();
