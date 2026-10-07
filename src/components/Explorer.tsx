@@ -265,14 +265,13 @@ export function Explorer() {
                             className={`cursor-pointer border-b border-line transition-colors ${isSel ? "bg-[#e9f2ff]" : "hover:bg-[#f4f8ff]"}`}
                           >
                             <td className="px-2 py-3 sm:px-3.5">
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); select(c.id); }}
-                                aria-pressed={isSel}
+                              <Link
+                                href={`/cities/${citySlug(c.city, c.state_code)}`}
+                                onClick={(e) => e.stopPropagation()}
                                 className="text-left text-[15px] font-semibold text-cobalt hover:underline"
                               >
                                 {c.city}
-                              </button>
+                              </Link>
                               <span className="ml-1 text-[13px] text-muted sm:hidden">{c.state_code}</span>
                             </td>
                             <td className="hidden px-2 py-3 sm:px-3.5 text-ink sm:table-cell">{c.state_code}</td>
