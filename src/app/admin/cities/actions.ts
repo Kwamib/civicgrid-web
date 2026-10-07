@@ -1,6 +1,5 @@
 "use server";
 
-import { getCurrentUser } from "@/lib/auth";
 
 // Override for local development against a local API; defaults to production.
 const API_BASE = process.env.CIVICGRID_API_BASE || "https://api.civicgrid.org";
