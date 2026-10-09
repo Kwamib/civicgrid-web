@@ -33,6 +33,9 @@ export type City = {
   verification_source_url?: string | null;
   last_checked_at?: string | null;
   last_check_result?: "confirmed" | "under_review" | "check_failed" | null;
+  // Appointed administrator (API migration 008): town administrator, city manager.
+  administrator_name?: string | null;
+  administrator_title?: string | null;
 };
 
 /** The lean row the explorer and pickers need. Keeps the /api/search payload small. */
@@ -55,6 +58,8 @@ export type CitySummary = Pick<
   | "official_leader_page"
   | "last_checked_at"
   | "last_check_result"
+  | "administrator_name"
+  | "administrator_title"
 >;
 
 export function toSummary(c: City): CitySummary {
@@ -76,6 +81,8 @@ export function toSummary(c: City): CitySummary {
     official_leader_page: c.official_leader_page ?? null,
     last_checked_at: c.last_checked_at ?? null,
     last_check_result: c.last_check_result ?? null,
+    administrator_name: c.administrator_name ?? null,
+    administrator_title: c.administrator_title ?? null,
   };
 }
 

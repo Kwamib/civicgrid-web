@@ -19,6 +19,9 @@ import { StatusBadge } from "@/components/ui";
 
 const PAGE_SIZE = 10;
 
+// Appointed administrator (API migration 008). Optional: older responses omit it.
+type AdminFields = { administrator_name?: string | null; administrator_title?: string | null };
+
 type SearchResponse = {
   data: CitySummary[];
   total: number;
@@ -280,6 +283,12 @@ export function Explorer() {
                                 <>
                                   <span className="block text-ink">{c.leader_name}</span>
                                   <span className="block text-[11px] text-muted">{c.leader_title || "Title not recorded"}</span>
+                                  {(c as CitySummary & AdminFields).administrator_name ? (
+                                    <span className="mt-1 block text-[11px] text-muted">
+                                      {(c as CitySummary & AdminFields).administrator_title || "Administrator"}:{" "}
+                                      {(c as CitySummary & AdminFields).administrator_name}
+                                    </span>
+                                  ) : null}
                                 </>
                               ) : (
                                 <span className="text-muted">No leader on record</span>
@@ -377,7 +386,7 @@ function PagerButton({ children, onClick, active, disabled, label }: {
   );
 }
 
-function CityPanel({ c }: { c: CitySummary }) {
+function CityPanel({ c }: { c: CitySummary & AdminFields }) {
   const v = verificationSummary(c);
   const checked = formatDate(c.last_checked_at);
   const verified = formatDate(c.leader_last_verified_at);
@@ -406,6 +415,12 @@ function CityPanel({ c }: { c: CitySummary }) {
           <div className="text-sm text-muted">No leader on record for this city.</div>
         )}
         <div className="mt-3"><StatusBadge tone={v.tone}>{v.label}</StatusBadge></div>
+        {c.administrator_name ? (
+          <div className="mt-4">
+            <div className="text-xs text-muted">{c.administrator_title || "Administrator"}</div>
+            <div className="text-sm font-semibold text-ink">{c.administrator_name}</div>
+          </div>
+        ) : null}
       </PanelSection>
 
       <PanelSection title="Source & checks">

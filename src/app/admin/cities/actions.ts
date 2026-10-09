@@ -1,9 +1,9 @@
 "use server";
 
+import { requireAdminUser } from "@/lib/admin";
 
 // Override for local development against a local API; defaults to production.
 const API_BASE = process.env.CIVICGRID_API_BASE || "https://api.civicgrid.org";
-import { requireAdminUser } from "@/lib/admin";
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
@@ -56,23 +56,27 @@ export async function listUnsure(offset = 0): Promise<{ cities: CityRow[]; total
   return { cities: json.cities ?? [], total: json.total_remaining ?? 0 };
 }
 
+/**
+ * chief_executive: the elected head (mayor, select board chair, village president).
+ * chief_administrator: the appointed manager (town administrator, city manager).
+ * Saving one role never changes the other (API migration 008).
+ */
+export type LeaderRole = "chief_executive" | "chief_administrator";
+
 export async function updateLeader(
   cityId: number,
   fullName: string,
   leaderTitle: string,
   source: string,
   governanceType: string,
+  role: LeaderRole = "chief_executive",
 ): Promise<{ ok: boolean; error?: string; mayor?: string }> {
   await requireAdminUser();
   if (!ADMIN_TOKEN) return { ok: false, error: "ADMIN_TOKEN not configured" };
   const name = fullName.trim();
   if (!name) return { ok: false, error: "Name is required" };
-  const parts = name.replace(/,/g, "").split(/\s+/).filter(Boolean);
-  const suffixes = new Set(["jr", "sr", "ii", "iii", "iv", "v"]);
-  let lastName = parts[parts.length - 1] || name;
-  if (parts.length > 1 && suffixes.has(lastName.toLowerCase())) {
-    lastName = parts[parts.length - 2];
-  }
+  const defaultTitle = role === "chief_administrator" ? "Town Administrator" : "Mayor";
+  // last_name is derived by the API (strips titles, skips Jr/Sr/II-IV suffixes).
   const res = await fetch(`${API_BASE}/admin/cities/${cityId}/leaders`, {
     method: "POST",
     headers: {
@@ -82,8 +86,8 @@ export async function updateLeader(
     cache: "no-store",
     body: JSON.stringify({
       full_name: name,
-      last_name: lastName,
-      leader_title: leaderTitle.trim() || "Mayor",
+      role,
+      leader_title: leaderTitle.trim() || defaultTitle,
       source: source.trim() || null,
       governance_type: governanceType || null,
     }),
@@ -91,7 +95,14 @@ export async function updateLeader(
   if (!res.ok) {
     const text = await res.text();
     console.error("updateLeader failed:", res.status, text);
-    return { ok: false, error: `${res.status}: ${text}` };
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed.detail === "string") detail = parsed.detail;
+    } catch {
+      /* not JSON */
+    }
+    return { ok: false, error: detail || `Request failed (${res.status})` };
   }
   const json = await res.json();
   return { ok: true, mayor: json.new_current?.full_name ?? name };
