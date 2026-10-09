@@ -39,6 +39,7 @@ export function FixCityClient() {
   const [sourceInput, setSourceInput] = useState("");
   const [govInput, setGovInput] = useState("mayor");
   const [roleInput, setRoleInput] = useState<LeaderRole>("chief_executive");
+  const [confirmLeader, setConfirmLeader] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -63,11 +64,13 @@ export function FixCityClient() {
     setSourceInput(row.url ?? "");
     setGovInput(row.governance_type ?? "mayor");
     setRoleInput("chief_executive");
+    setConfirmLeader(false);
     setMsg(null);
   }
 
   function onRoleChange(role: LeaderRole, row: CityRow) {
     setRoleInput(role);
+    setConfirmLeader(false);
     if (role === "chief_administrator") {
       // Start blank: the row shows the leader, not the administrator.
       setNameInput("");
@@ -87,6 +90,10 @@ export function FixCityClient() {
   }
 
   async function save(cityId: number) {
+    if (leaderTitleUnconfirmed) {
+      setMsg("This title sounds like an administrator. Switch to Administrator, or confirm this person is the elected leader.");
+      return;
+    }
     setBusy(true); setMsg(null);
     const res = await updateLeader(cityId, nameInput, titleInput, sourceInput, govInput, roleInput);
     setBusy(false);
@@ -108,6 +115,11 @@ export function FixCityClient() {
     setEditing(null);
     setMsg(`Updated ${res.mayor ?? nameInput}`);
   }
+
+  // Leader selected + administrator/manager title = probably the wrong toggle.
+  // Three such mix-ups on Oct 8; a warning alone didn't stop them.
+  const leaderTitleUnconfirmed =
+    roleInput === "chief_executive" && ADMIN_TITLE.test(titleInput) && !confirmLeader;
 
   return (
     <div>
@@ -167,13 +179,17 @@ export function FixCityClient() {
                 </div>
                 {roleInput === "chief_executive" && ADMIN_TITLE.test(titleInput) ? (
                   <div role="alert" className="text-xs px-3 py-2 rounded-lg" style={{ background: "#fffbeb", color: "#b45309" }}>
-                    This title sounds like an appointed administrator, but <strong>Leader</strong> is selected.{" "}
+                    This title sounds like an appointed administrator, but <strong>Leader</strong> is selected. Save is blocked until you choose.{" "}
                     <button type="button" onClick={() => onRoleChange("chief_administrator", row)} className="underline font-medium">Switch to Administrator</button>
+                    <label className="mt-2 flex items-center gap-2 font-medium">
+                      <input type="checkbox" checked={confirmLeader} onChange={(e) => setConfirmLeader(e.target.checked)} />
+                      Yes, this person is the elected leader
+                    </label>
                   </div>
                 ) : null}
                 <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 <div className="flex items-center gap-2">
-                  <button onClick={() => save(row.city_id)} disabled={busy} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving…" : "Save"}</button>
+                  <button onClick={() => save(row.city_id)} disabled={busy || leaderTitleUnconfirmed} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving…" : "Save"}</button>
                   <button onClick={() => setEditing(null)} disabled={busy} className="text-xs px-3 py-1.5 text-slate-500">Cancel</button>
                   {row.url ? <a href={row.url.startsWith("http") ? row.url : `https://${row.url}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:underline ml-auto">official site ↗</a> : null}
                 </div>
