@@ -19,6 +19,10 @@ import { Card, CodeBlock, Eyebrow, StatusBadge } from "@/components/ui";
 
 export const revalidate = 3600;
 
+// Leader roles (API migration 008). Optional: older responses omit them.
+type AdminFields = { administrator_name?: string | null; administrator_title?: string | null };
+type RoleField = { role?: "chief_executive" | "chief_administrator" | null };
+
 async function getCityBySlug(slug: string): Promise<City | null> {
   const all = await getAllCities();
   return all.find((c) => citySlug(c.city, c.state_code) === slug) ?? null;
@@ -63,8 +67,9 @@ export async function generateMetadata({
 
 export default async function CityDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const city = await getCityBySlug(slug);
-  if (!city) notFound();
+  const found = await getCityBySlug(slug);
+  if (!found) notFound();
+  const city = found as City & AdminFields;
 
   const history = await getCityHistory(city.id);
   const v = verificationSummary(city);
@@ -103,6 +108,13 @@ export default async function CityDetailPage({ params }: { params: Promise<{ slu
             <dl className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
               <Def term="Leader" value={city.leader_name || "No leader on record"} />
               <Def term="Role" value={city.leader_title || "Title not recorded"} />
+              {city.administrator_name ? (
+                <Def
+                  term={city.administrator_title || "Administrator"}
+                  value={city.administrator_name}
+                  note="Appointed to run day-to-day operations"
+                />
+              ) : null}
               {gov ? <Def term="Form of government" value={gov} /> : null}
               {city.leader_party ? <Def term="Party" value={city.leader_party} /> : null}
               <Def
@@ -302,7 +314,10 @@ function HistoryCard({ history }: { history: CityHistory }) {
                   <span aria-hidden="true" className={`absolute -left-[27px] top-1.5 h-3 w-3 rounded-full border-2 border-white ${l.is_current ? "bg-cobalt" : "bg-[#b9c8d9]"}`} />
                   <div className="text-[15px] font-semibold text-ink">
                     {l.full_name}{" "}
-                    <span className="ml-1 text-xs font-normal text-muted">{l.is_current ? "Current" : "Former"}</span>
+                    <span className="ml-1 text-xs font-normal text-muted">
+                      {l.is_current ? "Current" : "Former"}
+                      {(l as typeof l & RoleField).role === "chief_administrator" ? " · Administrator" : ""}
+                    </span>
                   </div>
                   <div className="text-[13px] text-muted">
                     {l.leader_title || "Title not recorded"}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { searchCities, listUnsure, updateLeader, type CityRow } from "@/app/admin/cities/actions";
+import { searchCities, listUnsure, updateLeader, type CityRow, type LeaderRole } from "@/app/admin/cities/actions";
 
 const GOVERNANCE = [
   { value: "mayor", label: "Mayor (elected)", title: "Mayor" },
@@ -10,6 +10,11 @@ const GOVERNANCE = [
   { value: "council_manager", label: "Council-Manager", title: "City Manager" },
   { value: "commission", label: "Commission", title: "Commission Chair" },
   { value: "unknown", label: "Unknown / no clear head", title: "" },
+];
+
+const ROLES: { value: LeaderRole; label: string; hint: string }[] = [
+  { value: "chief_executive", label: "Leader", hint: "Elected head: mayor, select board chair, village president" },
+  { value: "chief_administrator", label: "Administrator", hint: "Appointed manager: town administrator, city manager" },
 ];
 
 function verifiedBadge(ts: string | null) {
@@ -29,6 +34,7 @@ export function FixCityClient() {
   const [titleInput, setTitleInput] = useState("Mayor");
   const [sourceInput, setSourceInput] = useState("");
   const [govInput, setGovInput] = useState("mayor");
+  const [roleInput, setRoleInput] = useState<LeaderRole>("chief_executive");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -52,20 +58,42 @@ export function FixCityClient() {
     setTitleInput(row.leader_title ?? "Mayor");
     setSourceInput(row.url ?? "");
     setGovInput(row.governance_type ?? "mayor");
+    setRoleInput("chief_executive");
     setMsg(null);
+  }
+
+  function onRoleChange(role: LeaderRole, row: CityRow) {
+    setRoleInput(role);
+    if (role === "chief_administrator") {
+      // Start blank: the row shows the leader, not the administrator.
+      setNameInput("");
+      setTitleInput(govInput === "council_manager" ? "City Manager" : "Town Administrator");
+    } else {
+      setNameInput(row.full_name ?? "");
+      setTitleInput(row.leader_title ?? "Mayor");
+    }
   }
 
   function onGovChange(v: string) {
     setGovInput(v);
+    // The governance type suggests the LEADER's title; an administrator keeps theirs.
+    if (roleInput !== "chief_executive") return;
     const g = GOVERNANCE.find((x) => x.value === v);
     if (g && g.title) setTitleInput(g.title);
   }
 
   async function save(cityId: number) {
     setBusy(true); setMsg(null);
-    const res = await updateLeader(cityId, nameInput, titleInput, sourceInput, govInput);
+    const res = await updateLeader(cityId, nameInput, titleInput, sourceInput, govInput, roleInput);
     setBusy(false);
     if (!res.ok) { setMsg(res.error || "Update failed"); return; }
+    if (roleInput === "chief_administrator") {
+      // The rows list leaders only; an administrator save leaves the row as is.
+      setRows((prev) => prev.map((r) => r.city_id === cityId ? { ...r, governance_type: govInput } : r));
+      setEditing(null);
+      setMsg(`Updated administrator: ${res.mayor ?? nameInput}`);
+      return;
+    }
     if (mode === "unsure") {
       // resolved -> drop off the worklist
       setRows((prev) => prev.filter((r) => r.city_id !== cityId));
@@ -96,7 +124,7 @@ export function FixCityClient() {
       )}
 
       {loading ? <div className="text-sm text-slate-400 py-4">Loading…</div> : null}
-      {msg ? <div className="mb-4 text-sm px-4 py-2.5 rounded-lg" style={{ background: msg.startsWith("Updated") ? "#ecfdf5" : "#fef2f2", color: msg.startsWith("Updated") ? "#047857" : "#b91c1c" }}>{msg}</div> : null}
+      {msg ? <div role="status" className="mb-4 text-sm px-4 py-2.5 rounded-lg" style={{ background: msg.startsWith("Updated") ? "#ecfdf5" : "#fef2f2", color: msg.startsWith("Updated") ? "#047857" : "#b91c1c" }}>{msg}</div> : null}
 
       <div className="flex flex-col gap-2">
         {rows.map((row) => (
@@ -108,11 +136,28 @@ export function FixCityClient() {
 
             {editing === row.city_id ? (
               <div className="mt-2 flex flex-col gap-2">
+                <div role="radiogroup" aria-label="Which official" className="flex gap-2">
+                  {ROLES.map((r) => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={roleInput === r.value}
+                      title={r.hint}
+                      onClick={() => onRoleChange(r.value, row)}
+                      className={`text-xs px-3 py-1.5 rounded-lg border ${roleInput === r.value ? "text-white border-transparent" : "text-slate-600 border-slate-300"}`}
+                      style={roleInput === r.value ? { background: "#1e293b" } : {}}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                  <span className="text-[11px] text-slate-400 self-center">{ROLES.find((r) => r.value === roleInput)?.hint}</span>
+                </div>
                 <select value={govInput} onChange={(e) => onGovChange(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
                   {GOVERNANCE.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                 </select>
                 <div className="flex gap-2">
-                  <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Full name of top official" className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                  <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder={roleInput === "chief_administrator" ? "Full name of administrator / manager" : "Full name of top official"} className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                   <input value={titleInput} onChange={(e) => setTitleInput(e.target.value)} placeholder="Title" className="w-40 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
