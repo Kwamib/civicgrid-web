@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { searchCities, listUnsure, updateLeader, type CityRow, type LeaderRole } from "@/app/admin/cities/actions";
 
+// Form of government for the CITY. Who the person is (leader vs administrator)
+// is the Leader / Administrator toggle, not this list.
 const GOVERNANCE = [
-  { value: "mayor", label: "Mayor (elected)", title: "Mayor" },
-  { value: "select_board", label: "Select Board", title: "Select Board Chair" },
-  { value: "town_administrator", label: "Town Administrator", title: "Town Administrator" },
-  { value: "council_manager", label: "Council-Manager", title: "City Manager" },
-  { value: "commission", label: "Commission", title: "Commission Chair" },
-  { value: "unknown", label: "Unknown / no clear head", title: "" },
+  { value: "mayor", label: "Government: mayor-council", title: "Mayor" },
+  { value: "select_board", label: "Government: select board / town meeting", title: "Select Board Chair" },
+  { value: "council_manager", label: "Government: council-manager", title: "Mayor" },
+  { value: "commission", label: "Government: commission", title: "Commission Chair" },
+  { value: "unknown", label: "Government: unknown / no clear head", title: "" },
 ];
+// Older records may carry a value that's no longer offered; keep it selectable so saving doesn't change it.
+const LEGACY_GOVERNANCE: Record<string, string> = { town_administrator: "Government: town administrator (legacy)" };
+const ADMIN_TITLE = /\b(administrator|manager)\b/i;
 
 const ROLES: { value: LeaderRole; label: string; hint: string }[] = [
   { value: "chief_executive", label: "Leader", hint: "Elected head: mayor, select board chair, village president" },
@@ -155,11 +159,18 @@ export function FixCityClient() {
                 </div>
                 <select value={govInput} onChange={(e) => onGovChange(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
                   {GOVERNANCE.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+                  {LEGACY_GOVERNANCE[govInput] ? <option value={govInput}>{LEGACY_GOVERNANCE[govInput]}</option> : null}
                 </select>
                 <div className="flex gap-2">
                   <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder={roleInput === "chief_administrator" ? "Full name of administrator / manager" : "Full name of top official"} className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                   <input value={titleInput} onChange={(e) => setTitleInput(e.target.value)} placeholder="Title" className="w-40 border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 </div>
+                {roleInput === "chief_executive" && ADMIN_TITLE.test(titleInput) ? (
+                  <div role="alert" className="text-xs px-3 py-2 rounded-lg" style={{ background: "#fffbeb", color: "#b45309" }}>
+                    This title sounds like an appointed administrator, but <strong>Leader</strong> is selected.{" "}
+                    <button type="button" onClick={() => onRoleChange("chief_administrator", row)} className="underline font-medium">Switch to Administrator</button>
+                  </div>
+                ) : null}
                 <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 <div className="flex items-center gap-2">
                   <button onClick={() => save(row.city_id)} disabled={busy} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving…" : "Save"}</button>
