@@ -35,7 +35,7 @@ const QUEUES: { kind: QueueKind; label: string; help: string }[] = [
   { kind: "unverified", label: "Unverified", help: "No traceable verification yet, or no leader on record. Check the official page and save what you see." },
   { kind: "blocked", label: "Blocked", help: "The city's site refuses automated checks. Open it in your browser, confirm the leader, and save." },
   { kind: "no_name", label: "No name", help: "The page loaded but no leader name could be read from it. Find the name on the official site, or a better page." },
-  { kind: "wrong_link", label: "Wrong link", help: "The leadership page is missing, dead, moved or on another site. Find the right official page and save it as the source." },
+  { kind: "wrong_link", label: "Wrong link", help: "The leadership page is missing, dead, moved or on another site. Find the right official page and save it as the source. Cities with a suggested website from the official .gov list come first: open it, and if it is right, use it." },
 ];
 
 // Plain words for the verifier's last outcome (verify_mayors_v7.py).
@@ -66,6 +66,23 @@ function lastCheck(row: CityRow) {
       Last check: {OUTCOME_LABEL[row.last_check_outcome] ?? row.last_check_outcome}
       {when ? ` (${when})` : ""}
     </span>
+  );
+}
+
+function linkNotice(row: CityRow, onApply: (row: CityRow) => void, busy: boolean) {
+  if (!row.link_note && !row.suggested_url) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg px-3 py-2 text-xs" style={{ background: "#fffbeb", color: "#92400e" }}>
+      {row.link_note ? <span>Discovery: {row.link_note}</span> : null}
+      {row.suggested_url ? (
+        <span className="flex items-center gap-2">
+          <span>Suggested website: <a href={row.suggested_url} target="_blank" rel="noopener noreferrer" className="font-medium underline">{row.suggested_url.replace(/^https?:\/\//, "")} ↗</a></span>
+          <button type="button" onClick={() => onApply(row)} disabled={busy} className="rounded-md px-2.5 py-1 text-white disabled:opacity-40" style={{ background: "#0869ee" }}>
+            Use as website
+          </button>
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -151,10 +168,22 @@ export function FixCityClient() {
     const res = await updateCityLinks(row.city_id, links, confirmOfficial);
     setBusy(false);
     if (!res.ok) { setMsg(res.error || "Saving links failed"); return; }
-    setRows((prev) => prev.map((r) => r.city_id === row.city_id ? { ...r, url: res.url ?? r.url, mayor_url: res.mayorUrl ?? r.mayor_url } : r));
+    setRows((prev) => prev.map((r) => r.city_id === row.city_id ? { ...r, url: res.url ?? r.url, mayor_url: res.mayorUrl ?? r.mayor_url, ...(links.url ? { link_note: null, suggested_url: null } : {}) } : r));
     if (res.url) setUrlInput(res.url);
     if (res.mayorUrl) setMayorUrlInput(res.mayorUrl);
     setMsg("Updated links");
+  }
+
+  // One click: the suggestion is the city's own .gov from the official list, so no confirmation tick is needed.
+  async function applySuggestion(row: CityRow) {
+    if (!row.suggested_url) return;
+    setBusy(true); setMsg(null);
+    const res = await updateCityLinks(row.city_id, { url: row.suggested_url }, false);
+    setBusy(false);
+    if (!res.ok) { setMsg(res.error || "Saving the website failed"); return; }
+    setRows((prev) => prev.map((r) => r.city_id === row.city_id ? { ...r, url: res.url ?? r.url, link_note: null, suggested_url: null } : r));
+    if (editing === row.city_id && res.url) setUrlInput(res.url);
+    setMsg(`Updated website for ${row.city}, ${row.state_code}: ${res.url}`);
   }
 
   function onRoleChange(role: LeaderRole, row: CityRow) {
@@ -265,6 +294,7 @@ export function FixCityClient() {
               {verifiedBadge(row.last_verified_at)}
             </div>
             {lastCheck(row)}
+            {linkNotice(row, applySuggestion, busy)}
 
             {editing === row.city_id ? (
               <div className="mt-2 flex flex-col gap-2">
