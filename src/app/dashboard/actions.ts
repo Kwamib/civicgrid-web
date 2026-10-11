@@ -65,7 +65,8 @@ export async function generateKey(formData: FormData): Promise<{
   }
 
   const label = (formData.get("label") as string)?.trim() || null;
-  const tier = (formData.get("tier") as string) || "free";
+  // Self-serve keys are Free; paid tiers are issued by request (see /developers).
+  const tier = "free";
 
   const res = await fetch(`${API_BASE}/me/keys`, {
     method: "POST",

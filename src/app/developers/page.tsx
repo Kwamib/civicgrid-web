@@ -70,12 +70,16 @@ export default function DevelopersPage() {
               </thead>
               <tbody className="tabular text-ink">
                 <tr className="border-t border-line"><td className="py-2">Free</td><td>100</td><td>10</td><td>No</td></tr>
-                <tr className="border-t border-line"><td className="py-2">Starter</td><td>10,000</td><td>100</td><td>Yes</td></tr>
-                <tr className="border-t border-line"><td className="py-2">Pro</td><td>100,000</td><td>500</td><td>Yes</td></tr>
+                <tr className="border-t border-line"><td className="py-2">Starter</td><td>10,000</td><td>100</td><td>Yes, by request</td></tr>
+                <tr className="border-t border-line"><td className="py-2">Pro</td><td>100,000</td><td>500</td><td>Yes, by request</td></tr>
               </tbody>
             </table>
             <p className="mt-3 text-xs leading-relaxed text-muted">
               Day limits are a rolling 24-hour window. Over the limit, requests return HTTP 429 with a retry time. Full-export endpoints return HTTP 403 with <code className="font-mono">upgrade_required</code> on the Free tier.
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              New keys start on Free. Starter and Pro are available by request: email{" "}
+              <a href="mailto:hello@civicgrid.org" className="text-cobalt hover:underline">hello@civicgrid.org</a> with what you&apos;re building.
             </p>
           </Card>
         </div>
