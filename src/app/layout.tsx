@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.civicgrid.org"),
   title: "CivicGrid — Find the people leading US cities",
   description:
     "Search mayors and top officials across 3,000+ US cities, with the official source and verification date behind each record. Free REST API.",
@@ -11,6 +12,11 @@ export const metadata: Metadata = {
     url: "https://www.civicgrid.org",
     siteName: "CivicGrid",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CivicGrid",
+    description: "US city leadership, with the evidence behind every record.",
   },
   verification: {
     google: "XTNtMJjsIosWxYvsO1sAJeWUBv8VZZ8IPi9_Tpo1u5g",
