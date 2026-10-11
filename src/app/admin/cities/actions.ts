@@ -20,7 +20,33 @@ export type CityRow = {
   last_verified_at: string | null;
   url: string | null;
   flagged_at?: string | null;
+  mayor_url?: string | null;
+  last_check_outcome?: string | null;
+  last_check_at?: string | null;
 };
+
+/** Manual-check queue tabs (API GET /admin/queue, migration 012). */
+export type QueueKind = "unverified" | "blocked" | "no_name" | "wrong_link";
+export type QueueCounts = Record<QueueKind, number>;
+
+export async function listQueue(
+  kind: QueueKind,
+  offset = 0,
+): Promise<{ cities: CityRow[]; counts: QueueCounts | null }> {
+  await requireAdminUser();
+  if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not configured");
+  const params = new URLSearchParams({ kind, limit: "25", offset: String(offset) });
+  const res = await fetch(`${API_BASE}/admin/queue?${params}`, {
+    headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    console.error("listQueue failed:", res.status, await res.text());
+    return { cities: [], counts: null };
+  }
+  const json = await res.json();
+  return { cities: json.cities ?? [], counts: json.counts ?? null };
+}
 
 
 export async function searchCities(q: string, onlyUnverified = false): Promise<CityRow[]> {

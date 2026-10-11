@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { searchCities, listUnsure, updateLeader, type CityRow, type LeaderRole } from "@/app/admin/cities/actions";
+import {
+  searchCities,
+  listUnsure,
+  listQueue,
+  updateLeader,
+  type CityRow,
+  type LeaderRole,
+  type QueueKind,
+  type QueueCounts,
+} from "@/app/admin/cities/actions";
 
 // Form of government for the CITY. Who the person is (leader vs administrator)
 // is the Leader / Administrator toggle, not this list.
@@ -21,6 +30,44 @@ const ROLES: { value: LeaderRole; label: string; hint: string }[] = [
   { value: "chief_administrator", label: "Administrator", hint: "Appointed manager: town administrator, city manager" },
 ];
 
+const QUEUES: { kind: QueueKind; label: string; help: string }[] = [
+  { kind: "unverified", label: "Unverified", help: "No traceable verification yet, or no leader on record. Check the official page and save what you see." },
+  { kind: "blocked", label: "Blocked", help: "The city's site refuses automated checks. Open it in your browser, confirm the leader, and save." },
+  { kind: "no_name", label: "No name", help: "The page loaded but no leader name could be read from it. Find the name on the official site, or a better page." },
+  { kind: "wrong_link", label: "Wrong link", help: "The leadership page is missing, dead, moved or on another site. Find the right official page and save it as the source." },
+];
+
+// Plain words for the verifier's last outcome (verify_mayors_v7.py).
+const OUTCOME_LABEL: Record<string, string> = {
+  blocked: "site blocked the check",
+  soft_blocked: "site showed a bot check",
+  robots_deny: "site asks bots not to visit",
+  no_name: "no name found on the page",
+  bad_extract: "name didn't look valid",
+  guard_blocked: "name not on the page",
+  notfound: "page not found",
+  off_domain: "link leads off the city site",
+  wrong_state: "page is for another state",
+  bad_page: "not a leadership page",
+  fetch_error: "page didn't load",
+  model_error: "reader error",
+  match: "leader confirmed",
+  change: "different name proposed",
+  ambiguous: "page names more than one person",
+  rejected_before: "name already rejected",
+};
+
+function lastCheck(row: CityRow) {
+  if (!row.last_check_outcome) return null;
+  const when = row.last_check_at ? new Date(row.last_check_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
+  return (
+    <span className="text-[11px] text-slate-500">
+      Last check: {OUTCOME_LABEL[row.last_check_outcome] ?? row.last_check_outcome}
+      {when ? ` (${when})` : ""}
+    </span>
+  );
+}
+
 function verifiedBadge(ts: string | null) {
   if (!ts) return <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "#fffbeb", color: "#b45309" }}>never verified</span>;
   const d = new Date(ts);
@@ -28,7 +75,9 @@ function verifiedBadge(ts: string | null) {
 }
 
 export function FixCityClient() {
-  const [mode, setMode] = useState<"search" | "unsure">("search");
+  const [mode, setMode] = useState<"search" | "unsure" | QueueKind>("search");
+  const [counts, setCounts] = useState<QueueCounts | null>(null);
+  const [queueOffset, setQueueOffset] = useState(0);
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<CityRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -57,11 +106,24 @@ export function FixCityClient() {
     setRows(cities); setTotal(total); setLoading(false);
   }
 
+  async function loadQueue(kind: QueueKind, offset = 0) {
+    setLoading(true); setMsg(null); setMode(kind); setEditing(null);
+    if (offset === 0) setRows([]);
+    const res = await listQueue(kind, offset);
+    setRows((prev) => (offset === 0 ? res.cities : [...prev, ...res.cities]));
+    if (res.counts) setCounts(res.counts);
+    setQueueOffset(offset);
+    setLoading(false);
+  }
+
+  const isQueue = mode !== "search" && mode !== "unsure";
+  const queueInfo = QUEUES.find((x) => x.kind === mode);
+
   function startEdit(row: CityRow) {
     setEditing(row.city_id);
     setNameInput(row.full_name ?? "");
     setTitleInput(row.leader_title ?? "Mayor");
-    setSourceInput(row.url ?? "");
+    setSourceInput(row.mayor_url ?? row.url ?? "");
     setGovInput(row.governance_type ?? "mayor");
     setRoleInput("chief_executive");
     setConfirmLeader(false);
@@ -109,6 +171,11 @@ export function FixCityClient() {
       // resolved -> drop off the worklist
       setRows((prev) => prev.filter((r) => r.city_id !== cityId));
       setTotal((t) => Math.max(0, t - 1));
+    } else if (isQueue) {
+      // A save stamps a verification, so the city leaves every queue tab.
+      const kind = mode as QueueKind;
+      setRows((prev) => prev.filter((r) => r.city_id !== cityId));
+      setCounts((c) => (c ? { ...c, [kind]: Math.max(0, c[kind] - 1) } : c));
     } else {
       setRows((prev) => prev.map((r) => r.city_id === cityId ? { ...r, full_name: res.mayor ?? nameInput, leader_title: titleInput, governance_type: govInput, last_verified_at: new Date().toISOString() } : r));
     }
@@ -127,6 +194,22 @@ export function FixCityClient() {
         <button onClick={() => setMode("search")} className={`text-sm px-4 py-2 rounded-lg ${mode === "search" ? "text-white" : "text-slate-600 border border-slate-300"}`} style={mode === "search" ? { background: "#1e293b" } : {}}>Search</button>
         <button onClick={loadUnsure} className={`text-sm px-4 py-2 rounded-lg ${mode === "unsure" ? "text-white" : "text-slate-600 border border-slate-300"}`} style={mode === "unsure" ? { background: "#1e293b" } : {}}>UNSURE worklist{mode === "unsure" && total ? ` (${total} left)` : ""}</button>
       </div>
+      <div role="tablist" aria-label="Manual-check queue" className="flex flex-wrap items-center gap-2 mb-5">
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-400 mr-1">Needs a human</span>
+        {QUEUES.map((x) => (
+          <button
+            key={x.kind}
+            role="tab"
+            aria-selected={mode === x.kind}
+            onClick={() => loadQueue(x.kind)}
+            className={`text-sm px-3 py-1.5 rounded-lg ${mode === x.kind ? "text-white" : "text-slate-600 border border-slate-300"}`}
+            style={mode === x.kind ? { background: "#0869ee" } : {}}
+          >
+            {x.label}
+            {counts ? <span className={`ml-1.5 ${mode === x.kind ? "text-white/80" : "text-slate-400"}`}>{counts[x.kind].toLocaleString()}</span> : null}
+          </button>
+        ))}
+      </div>
 
       {mode === "search" ? (
         <form onSubmit={doSearch} className="mb-5">
@@ -135,6 +218,8 @@ export function FixCityClient() {
             <button type="submit" disabled={loading} className="px-5 py-2.5 rounded-lg text-white text-sm disabled:opacity-40" style={{ background: "#1e293b" }}>{loading ? "..." : "Search"}</button>
           </div>
         </form>
+      ) : isQueue ? (
+        <p className="mb-4 text-sm text-slate-500">{queueInfo?.help} Largest cities first. Saving here counts as a human verification and removes the city from the queue.</p>
       ) : (
         <p className="mb-4 text-sm text-slate-500">Cities the verifier couldn&rsquo;t classify — often mayorless (select-board, town-manager, commission). Set the real governance type and top official, or the mayor if there is one.</p>
       )}
@@ -149,6 +234,7 @@ export function FixCityClient() {
               <div className="text-sm font-medium">{row.city}, {row.state_code}{row.population ? <span className="text-slate-400 font-normal"> · pop {row.population.toLocaleString()}</span> : null}{row.governance_type ? <span className="text-[11px] ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{row.governance_type}</span> : null}</div>
               {verifiedBadge(row.last_verified_at)}
             </div>
+            {lastCheck(row)}
 
             {editing === row.city_id ? (
               <div className="mt-2 flex flex-col gap-2">
@@ -191,7 +277,8 @@ export function FixCityClient() {
                 <div className="flex items-center gap-2">
                   <button onClick={() => save(row.city_id)} disabled={busy || leaderTitleUnconfirmed} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving…" : "Save"}</button>
                   <button onClick={() => setEditing(null)} disabled={busy} className="text-xs px-3 py-1.5 text-slate-500">Cancel</button>
-                  {row.url ? <a href={row.url.startsWith("http") ? row.url : `https://${row.url}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:underline ml-auto">official site ↗</a> : null}
+                  {row.mayor_url ? <a href={row.mayor_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:underline ml-auto">leader page ↗</a> : null}
+                  {row.url ? <a href={row.url.startsWith("http") ? row.url : `https://${row.url}`} target="_blank" rel="noopener noreferrer" className={`text-xs text-blue-700 hover:underline ${row.mayor_url ? "" : "ml-auto"}`}>official site ↗</a> : null}
                 </div>
               </div>
             ) : (
@@ -204,6 +291,12 @@ export function FixCityClient() {
         ))}
         {rows.length === 0 && !loading && mode === "search" && q ? <div className="text-sm text-slate-400 text-center py-8">No cities found.</div> : null}
         {rows.length === 0 && !loading && mode === "unsure" ? <div className="text-sm text-slate-400 text-center py-8">No UNSUREs left in this batch. 🎉</div> : null}
+        {rows.length === 0 && !loading && isQueue ? <div className="text-sm text-slate-400 text-center py-8">Nothing in this queue right now.</div> : null}
+        {isQueue && counts && rows.length > 0 && rows.length < counts[mode as QueueKind] ? (
+          <button onClick={() => loadQueue(mode as QueueKind, queueOffset + 25)} disabled={loading} className="self-center mt-2 text-sm px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40">
+            {loading ? "Loading…" : `Show more (${(counts[mode as QueueKind] - rows.length).toLocaleString()} left)`}
+          </button>
+        ) : null}
       </div>
     </div>
   );
