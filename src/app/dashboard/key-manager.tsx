@@ -104,23 +104,19 @@ export function KeyManager({ keys }: { keys: KeyInfo[] }) {
         className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <h3 className="font-medium mb-4 text-slate-900">Generate new key</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input
-            name="label"
-            type="text"
-            placeholder="Label (e.g. production)"
-            className="sm:col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
-          />
-          <select
-            name="tier"
-            defaultValue="free"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
-          >
-            <option value="free">Free (100/day)</option>
-            <option value="starter">Starter (10k/day)</option>
-            <option value="pro">Pro (100k/day)</option>
-          </select>
-        </div>
+        <input
+          name="label"
+          type="text"
+          placeholder="Label (e.g. production)"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
+        />
+        <p className="mt-3 text-sm text-slate-500">
+          New keys start on the Free tier (100 requests a day). Need more, or the full export? Email{" "}
+          <a href="mailto:hello@civicgrid.org" className="font-medium text-slate-900 underline">
+            hello@civicgrid.org
+          </a>{" "}
+          and tell us what you&apos;re building.
+        </p>
         <button
           type="submit"
           disabled={isPending}
