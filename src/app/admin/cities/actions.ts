@@ -96,6 +96,7 @@ export async function updateLeader(
   source: string,
   governanceType: string,
   role: LeaderRole = "chief_executive",
+  samePerson = false,
 ): Promise<{ ok: boolean; error?: string; mayor?: string }> {
   await requireAdminUser();
   if (!ADMIN_TOKEN) return { ok: false, error: "ADMIN_TOKEN not configured" };
@@ -116,6 +117,7 @@ export async function updateLeader(
       leader_title: leaderTitle.trim() || defaultTitle,
       source: source.trim() || null,
       governance_type: governanceType || null,
+      same_person: samePerson,
     }),
   });
   if (!res.ok) {
@@ -132,4 +134,36 @@ export async function updateLeader(
   }
   const json = await res.json();
   return { ok: true, mayor: json.new_current?.full_name ?? name };
+}
+
+/** Fix a city's website and/or official leadership page (API PATCH /admin/cities/{id}/links). */
+export async function updateCityLinks(
+  cityId: number,
+  links: { url?: string; mayorUrl?: string },
+  confirmOfficial = false,
+): Promise<{ ok: boolean; error?: string; url?: string | null; mayorUrl?: string | null }> {
+  await requireAdminUser();
+  if (!ADMIN_TOKEN) return { ok: false, error: "ADMIN_TOKEN not configured" };
+  const body: Record<string, unknown> = { confirm_official: confirmOfficial };
+  if (links.url !== undefined) body.url = links.url.trim();
+  if (links.mayorUrl !== undefined) body.mayor_url = links.mayorUrl.trim();
+  const res = await fetch(`${API_BASE}/admin/cities/${cityId}/links`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${ADMIN_TOKEN}`, "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text);
+      detail = typeof parsed.detail === "string" ? parsed.detail : parsed.detail?.message ?? text;
+    } catch {
+      /* not JSON */
+    }
+    return { ok: false, error: detail || `Request failed (${res.status})` };
+  }
+  const json = await res.json();
+  return { ok: true, url: json.city?.url ?? null, mayorUrl: json.city?.mayor_url ?? null };
 }

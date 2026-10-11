@@ -6,6 +6,7 @@ import {
   listUnsure,
   listQueue,
   updateLeader,
+  updateCityLinks,
   type CityRow,
   type LeaderRole,
   type QueueKind,
@@ -89,6 +90,10 @@ export function FixCityClient() {
   const [govInput, setGovInput] = useState("mayor");
   const [roleInput, setRoleInput] = useState<LeaderRole>("chief_executive");
   const [confirmLeader, setConfirmLeader] = useState(false);
+  const [samePerson, setSamePerson] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [mayorUrlInput, setMayorUrlInput] = useState("");
+  const [confirmOfficial, setConfirmOfficial] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -127,7 +132,29 @@ export function FixCityClient() {
     setGovInput(row.governance_type ?? "mayor");
     setRoleInput("chief_executive");
     setConfirmLeader(false);
+    setSamePerson(false);
+    setUrlInput(row.url ?? "");
+    setMayorUrlInput(row.mayor_url ?? "");
+    setConfirmOfficial(false);
     setMsg(null);
+  }
+
+  async function saveLinks(row: CityRow) {
+    const links: { url?: string; mayorUrl?: string } = {};
+    if (urlInput.trim() && urlInput.trim() !== (row.url ?? "")) links.url = urlInput;
+    if (mayorUrlInput.trim() && mayorUrlInput.trim() !== (row.mayor_url ?? "")) links.mayorUrl = mayorUrlInput;
+    if (!links.url && !links.mayorUrl) {
+      setMsg("No link changes to save.");
+      return;
+    }
+    setBusy(true); setMsg(null);
+    const res = await updateCityLinks(row.city_id, links, confirmOfficial);
+    setBusy(false);
+    if (!res.ok) { setMsg(res.error || "Saving links failed"); return; }
+    setRows((prev) => prev.map((r) => r.city_id === row.city_id ? { ...r, url: res.url ?? r.url, mayor_url: res.mayorUrl ?? r.mayor_url } : r));
+    if (res.url) setUrlInput(res.url);
+    if (res.mayorUrl) setMayorUrlInput(res.mayorUrl);
+    setMsg("Updated links");
   }
 
   function onRoleChange(role: LeaderRole, row: CityRow) {
@@ -157,7 +184,10 @@ export function FixCityClient() {
       return;
     }
     setBusy(true); setMsg(null);
-    const res = await updateLeader(cityId, nameInput, titleInput, sourceInput, govInput, roleInput);
+    const res = await updateLeader(
+      cityId, nameInput, titleInput, sourceInput, govInput, roleInput,
+      roleInput === "chief_executive" && samePerson,
+    );
     setBusy(false);
     if (!res.ok) { setMsg(res.error || "Update failed"); return; }
     if (roleInput === "chief_administrator") {
@@ -225,7 +255,7 @@ export function FixCityClient() {
       )}
 
       {loading ? <div className="text-sm text-slate-400 py-4">Loading…</div> : null}
-      {msg ? <div role="status" className="mb-4 text-sm px-4 py-2.5 rounded-lg" style={{ background: msg.startsWith("Updated") ? "#ecfdf5" : "#fef2f2", color: msg.startsWith("Updated") ? "#047857" : "#b91c1c" }}>{msg}</div> : null}
+      {msg ? <div role="status" className="mb-4 text-sm px-4 py-2.5 rounded-lg" style={{ background: msg.startsWith("Updated") || msg.startsWith("No link") ? "#ecfdf5" : "#fef2f2", color: msg.startsWith("Updated") || msg.startsWith("No link") ? "#047857" : "#b91c1c" }}>{msg}</div> : null}
 
       <div className="flex flex-col gap-2">
         {rows.map((row) => (
@@ -273,6 +303,12 @@ export function FixCityClient() {
                     </label>
                   </div>
                 ) : null}
+                {roleInput === "chief_executive" && row.full_name ? (
+                  <label className="flex items-center gap-2 text-xs text-slate-600" title="Fixes the name on the existing record instead of recording a new leader">
+                    <input type="checkbox" checked={samePerson} onChange={(e) => setSamePerson(e.target.checked)} />
+                    Same person as {row.full_name}: just fix the spelling (no new leader in history)
+                  </label>
+                ) : null}
                 <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
                 <div className="flex items-center gap-2">
                   <button onClick={() => save(row.city_id)} disabled={busy || leaderTitleUnconfirmed} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving…" : "Save"}</button>
@@ -280,6 +316,26 @@ export function FixCityClient() {
                   {row.mayor_url ? <a href={row.mayor_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:underline ml-auto">leader page ↗</a> : null}
                   {row.url ? <a href={row.url.startsWith("http") ? row.url : `https://${row.url}`} target="_blank" rel="noopener noreferrer" className={`text-xs text-blue-700 hover:underline ${row.mayor_url ? "" : "ml-auto"}`}>official site ↗</a> : null}
                 </div>
+
+                <details className="mt-1 rounded-lg border border-slate-200 px-3 py-2">
+                  <summary className="cursor-pointer text-xs font-medium text-slate-600">City links: website and official leadership page</summary>
+                  <div className="mt-2 flex flex-col gap-2">
+                    <label className="text-[11px] text-slate-500">City website
+                      <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} placeholder="https://www.example.gov" className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                    </label>
+                    <label className="text-[11px] text-slate-500">Official leadership page (the page that names the leader)
+                      <input value={mayorUrlInput} onChange={(e) => setMayorUrlInput(e.target.value)} placeholder="https://www.example.gov/mayor" className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-600">
+                      <input type="checkbox" checked={confirmOfficial} onChange={(e) => setConfirmOfficial(e.target.checked)} />
+                      Not a .gov or .{row.state_code.toLowerCase()}.us address, but I confirmed it is the city&apos;s own official site
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => saveLinks(row)} disabled={busy} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#0869ee" }}>{busy ? "Saving…" : "Save links"}</button>
+                      <span className="text-[11px] text-slate-400">Saved separately from the leader. A new leadership page is re-checked on the next verifier run.</span>
+                    </div>
+                  </div>
+                </details>
               </div>
             ) : (
               <div className="flex items-center justify-between">
