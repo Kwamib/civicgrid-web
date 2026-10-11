@@ -183,6 +183,12 @@ function LoginForm() {
           </p>
         )}
 
+        <p className="mt-6 text-center text-xs text-slate-500">
+          By signing in you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-slate-900">Terms of Use</Link> and{" "}
+          <Link href="/privacy" className="underline hover:text-slate-900">Privacy Policy</Link>.
+        </p>
+
         {/* Back to home */}
         <div className="mt-8 text-center">
           <Link

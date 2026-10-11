@@ -13,6 +13,8 @@ export function Footer() {
           <Link href="/methodology" className="text-cobalt hover:underline">Sources &amp; methodology</Link>
           <Link href="/correction" className="text-cobalt hover:underline">Report a correction</Link>
           <Link href="/developers" className="text-cobalt hover:underline">API &amp; docs</Link>
+          <Link href="/terms" className="text-cobalt hover:underline">Terms</Link>
+          <Link href="/privacy" className="text-cobalt hover:underline">Privacy</Link>
           <a href="https://github.com/Kwamib" target="_blank" rel="noopener noreferrer" className="text-cobalt hover:underline">GitHub</a>
           <a href="https://kwamib.dev" target="_blank" rel="noopener noreferrer" className="text-cobalt hover:underline">Made by Kwame</a>
         </nav>
