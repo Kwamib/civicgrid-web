@@ -5,6 +5,7 @@ import { stateSlug, citySlug } from "@/lib/slug";
 import { getAllStates, getStateBySlug, TOP_CITIES_LIMIT } from "@/lib/states";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { OG_IMAGES } from "@/lib/og";
 
 export async function generateStaticParams() {
   const states = await getAllStates();
@@ -32,6 +33,7 @@ export async function generateMetadata({
       url: `https://www.civicgrid.org/states/${slug}`,
       siteName: "CivicGrid",
       type: "website",
+      images: OG_IMAGES,
     },
   };
 }

@@ -3,11 +3,20 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CodeBlock, PageHeading } from "@/components/ui";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "API & docs · CivicGrid",
   description:
     "CivicGrid REST API reference: endpoints, authentication, rate limits, and the verification fields on every city record.",
+  openGraph: {
+    title: "API & docs · CivicGrid",
+    description: "CivicGrid REST API reference: endpoints, authentication, rate limits, and the verification fields on every city record.",
+    url: "/developers",
+    siteName: "CivicGrid",
+    type: "website",
+    images: OG_IMAGES,
+  },
 };
 
 const ENDPOINTS: { method: string; path: string; desc: string; paid?: boolean }[] = [
