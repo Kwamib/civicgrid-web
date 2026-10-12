@@ -4,11 +4,20 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageHeading } from "@/components/ui";
 import { CONTACT_EMAIL, LEGAL_UPDATED, LegalSection } from "@/components/LegalSection";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Terms of Use · CivicGrid",
   description:
     "The terms for using the CivicGrid website and API: accounts and keys, fair use, how you may use the data, and our limits of responsibility.",
+  openGraph: {
+    title: "Terms of Use · CivicGrid",
+    description: "The terms for using the CivicGrid website and API: accounts and keys, fair use, how you may use the data, and our limits of responsibility.",
+    url: "/terms",
+    siteName: "CivicGrid",
+    type: "website",
+    images: OG_IMAGES,
+  },
 };
 
 const link = "font-semibold text-cobalt hover:underline";

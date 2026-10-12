@@ -5,10 +5,19 @@ import { PageHeading } from "@/components/ui";
 import { CorrectionForm } from "@/components/CorrectionForm";
 import { getAllCities } from "@/lib/cities";
 import { findCityBySlug } from "@/lib/slug";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Report a correction · CivicGrid",
   description: "Tell CivicGrid about an incorrect city leadership record, with a link to the official source.",
+  openGraph: {
+    title: "Report a correction · CivicGrid",
+    description: "Tell CivicGrid about an incorrect city leadership record, with a link to the official source.",
+    url: "/correction",
+    siteName: "CivicGrid",
+    type: "website",
+    images: OG_IMAGES,
+  },
 };
 
 export default async function CorrectionPage({

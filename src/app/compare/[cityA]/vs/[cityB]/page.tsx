@@ -5,6 +5,7 @@ import { citySlug } from "@/lib/slug";
 import { getAllCities, type City } from "@/lib/cities";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { OG_IMAGES } from "@/lib/og";
 
 export const revalidate = 3600;
 
@@ -34,6 +35,7 @@ export async function generateMetadata({
       url: `https://www.civicgrid.org/compare/${cityA}/vs/${cityB}`,
       siteName: "CivicGrid",
       type: "website",
+      images: OG_IMAGES,
     },
   };
 }

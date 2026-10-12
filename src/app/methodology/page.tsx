@@ -4,11 +4,20 @@ import type { ReactNode } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageHeading } from "@/components/ui";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Sources & methodology · CivicGrid",
   description:
     "How CivicGrid finds official sources, checks city leadership records, and keeps reviewers in charge of every published change.",
+  openGraph: {
+    title: "Sources & methodology · CivicGrid",
+    description: "How CivicGrid finds official sources, checks city leadership records, and keeps reviewers in charge of every published change.",
+    url: "/methodology",
+    siteName: "CivicGrid",
+    type: "website",
+    images: OG_IMAGES,
+  },
 };
 
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {

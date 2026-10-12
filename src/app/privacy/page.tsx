@@ -4,11 +4,20 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageHeading } from "@/components/ui";
 import { CONTACT_EMAIL, LEGAL_UPDATED, LegalSection } from "@/components/LegalSection";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Privacy Policy · CivicGrid",
   description:
     "What CivicGrid collects when you browse the site, sign in, or use the API, who processes it, and how to have it deleted.",
+  openGraph: {
+    title: "Privacy Policy · CivicGrid",
+    description: "What CivicGrid collects when you browse the site, sign in, or use the API, who processes it, and how to have it deleted.",
+    url: "/privacy",
+    siteName: "CivicGrid",
+    type: "website",
+    images: OG_IMAGES,
+  },
 };
 
 const mail = (

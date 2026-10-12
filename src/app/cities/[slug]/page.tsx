@@ -16,6 +16,7 @@ import { Header } from "@/components/Header";
 import { BetaNotice } from "@/components/BetaNotice";
 import { Footer } from "@/components/Footer";
 import { Card, CodeBlock, Eyebrow, StatusBadge } from "@/components/ui";
+import { OG_IMAGES } from "@/lib/og";
 
 export const revalidate = 3600;
 
@@ -61,6 +62,7 @@ export async function generateMetadata({
       url: `https://www.civicgrid.org/cities/${slug}`,
       siteName: "CivicGrid",
       type: "website",
+      images: OG_IMAGES,
     },
   };
 }

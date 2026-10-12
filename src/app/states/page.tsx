@@ -4,6 +4,7 @@ import { stateSlug } from "@/lib/slug";
 import { getAllStates } from "@/lib/states";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Cities & Mayors by State · CivicGrid",
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
     url: "https://www.civicgrid.org/states",
     siteName: "CivicGrid",
     type: "website",
+    images: OG_IMAGES,
   },
 };
 

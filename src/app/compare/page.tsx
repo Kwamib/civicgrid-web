@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CompareClient } from "@/components/CompareClient";
+import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Compare Cities · CivicGrid",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
     url: "https://www.civicgrid.org/compare",
     siteName: "CivicGrid",
     type: "website",
+    images: OG_IMAGES,
   },
 };
 
