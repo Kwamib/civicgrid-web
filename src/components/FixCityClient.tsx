@@ -69,8 +69,19 @@ function lastCheck(row: CityRow) {
   );
 }
 
+// .gov or this state's .us: the official namespaces the API accepts without a confirmation tick.
+function isOfficialHost(url: string, stateCode: string) {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host.endsWith(".gov") || host.endsWith(`.${stateCode.toLowerCase()}.us`);
+  } catch {
+    return false;
+  }
+}
+
 function linkNotice(row: CityRow, onApply: (row: CityRow) => void, busy: boolean) {
   if (!row.link_note && !row.suggested_url) return null;
+  const official = row.suggested_url ? isOfficialHost(row.suggested_url, row.state_code) : true;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg px-3 py-2 text-xs" style={{ background: "#fffbeb", color: "#92400e" }}>
       {row.link_note ? <span>Discovery: {row.link_note}</span> : null}
@@ -78,8 +89,9 @@ function linkNotice(row: CityRow, onApply: (row: CityRow) => void, busy: boolean
         <span className="flex items-center gap-2">
           <span>Suggested website: <a href={row.suggested_url} target="_blank" rel="noopener noreferrer" className="font-medium underline">{row.suggested_url.replace(/^https?:\/\//, "")} ↗</a></span>
           <button type="button" onClick={() => onApply(row)} disabled={busy} className="rounded-md px-2.5 py-1 text-white disabled:opacity-40" style={{ background: "#0869ee" }}>
-            Use as website
+            {official ? "Use as website" : "Confirm official and use"}
           </button>
+          {official ? null : <span className="text-[11px]">Not a .gov address: open it first and check it is the city&apos;s own site.</span>}
         </span>
       ) : null}
     </div>
@@ -174,11 +186,14 @@ export function FixCityClient() {
     setMsg("Updated links");
   }
 
-  // One click: the suggestion is the city's own .gov from the official list, so no confirmation tick is needed.
+  // One click. A .gov suggestion needs no confirmation; any other address (a
+  // moved site like dsm.city) is sent as "confirmed official", which the
+  // button label asks the reviewer to check first.
   async function applySuggestion(row: CityRow) {
     if (!row.suggested_url) return;
     setBusy(true); setMsg(null);
-    const res = await updateCityLinks(row.city_id, { url: row.suggested_url }, false);
+    const confirm = !isOfficialHost(row.suggested_url, row.state_code);
+    const res = await updateCityLinks(row.city_id, { url: row.suggested_url }, confirm);
     setBusy(false);
     if (!res.ok) { setMsg(res.error || "Saving the website failed"); return; }
     setRows((prev) => prev.map((r) => r.city_id === row.city_id ? { ...r, url: res.url ?? r.url, link_note: null, suggested_url: null } : r));
