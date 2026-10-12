@@ -118,7 +118,8 @@ let cachePromise: Promise<City[]> | null = null;
  * Module-level memoization (above) ensures concurrent callers in the same
  * Node process share one in-flight fetch instead of stampeding the API.
  *
- * Returns an empty array if the API key is missing or the request fails.
+ * Retries once; if both tries fail, returns the last good copy, or an empty
+ * array when there is none (or the API key is missing).
  */
 export async function getAllCities(): Promise<City[]> {
   if (cachedCities !== null && Date.now() - cachedAt < CACHE_TTL_MS) return cachedCities;
@@ -127,30 +128,34 @@ export async function getAllCities(): Promise<City[]> {
   if (!API_KEY) return [];
 
   cachePromise = (async () => {
-    try {
-      const res = await fetch(`${API_BASE}/cities/all`, {
-        headers: { Authorization: `Bearer ${API_KEY}` },
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        console.error(`[getAllCities] API returned ${res.status}`);
-        cachePromise = null;
-        return [];
+    // Two tries, a second apart: a fresh server instance's first fetch of the
+    // ~2 MB list sometimes fails, and search answered 502 right after the
+    // Oct 12 deploy. On a second failure an older copy beats an empty list.
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetch(`${API_BASE}/cities/all`, {
+          headers: { Authorization: `Bearer ${API_KEY}` },
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        const json = await res.json();
+        const cities = (json.data || []) as City[];
+        cachedCities = cities;
+        cachedAt = Date.now();
+        cachePromise = null; // clear so the next expiry triggers a real refetch
+        return cities;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error(`[getAllCities] attempt ${attempt} failed:`, message);
+        if (attempt === 1) await new Promise((r) => setTimeout(r, 1000));
       }
-
-      const json = await res.json();
-      const cities = (json.data || []) as City[];
-      cachedCities = cities;
-      cachedAt = Date.now();
-      cachePromise = null; // clear so the next expiry triggers a real refetch
-      return cities;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.error("[getAllCities] fetch failed:", message);
-      cachePromise = null;
-      return [];
     }
+    cachePromise = null;
+    if (cachedCities !== null) {
+      console.error("[getAllCities] serving the previous copy of the city list");
+      return cachedCities;
+    }
+    return [];
   })();
 
   return cachePromise;
