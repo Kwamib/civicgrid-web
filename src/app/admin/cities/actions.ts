@@ -23,6 +23,9 @@ export type CityRow = {
   mayor_url?: string | null;
   last_check_outcome?: string | null;
   last_check_at?: string | null;
+  /** Discovery v12 (migration 013): why the stored website is wrong, and the city's own .gov if it refused our script. */
+  link_note?: string | null;
+  suggested_url?: string | null;
 };
 
 /** Manual-check queue tabs (API GET /admin/queue, migration 012). */
