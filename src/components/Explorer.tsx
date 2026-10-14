@@ -28,6 +28,7 @@ type SearchResponse = {
   page: number;
   pageCount: number;
   datasetCount: number;
+  capped?: boolean;
   states: [string, string][];
 };
 
@@ -98,6 +99,7 @@ export function Explorer() {
   const total = result?.total ?? 0;
   const pageCount = result?.pageCount ?? 1;
   const currentPage = result?.page ?? 1;
+  const capped = result?.capped ?? false;
   const selected = pageRows.find((c) => c.id === selectedId) ?? pageRows[0] ?? null;
 
   function retry() {
@@ -334,6 +336,16 @@ export function Explorer() {
                 <PagerButton disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)} label="Next page">›</PagerButton>
               </nav>
             </div>
+          ) : null}
+          {status === "ready" && capped && currentPage === pageCount ? (
+            <p className="mt-3 text-[13px] text-muted">
+              Browsing stops after the first {(pageCount * PAGE_SIZE).toLocaleString("en-US")} matches. Search a city name
+              or pick a state to see the rest, or{" "}
+              <a href="/developers" className="underline">
+                get the full dataset
+              </a>
+              .
+            </p>
           ) : null}
         </section>
 

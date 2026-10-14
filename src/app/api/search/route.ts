@@ -3,13 +3,15 @@ import { getAllCities, toSummary } from "@/lib/cities";
 import { parseSearchParams, searchCities } from "@/lib/search";
 import { clientIp, limit } from "@/lib/rateLimit";
 
-// Typing in the search box sends a request per pause; 60 a minute is far
-// more than a person needs and far less than a script paging the dataset.
-const SEARCHES_PER_MINUTE = 60;
+// Typing in the search box sends a request per pause; 30 a minute is more
+// than a person needs. Together with MAX_BROWSE_ROWS this keeps a script from
+// copying the dataset through the site (the full dataset is the paid export).
+const SEARCHES_PER_MINUTE = 30;
 
 /**
  * Paged city search for the explorer and city pickers. Returns at most
- * MAX_PAGE_SIZE rows per request, never the whole dataset.
+ * MAX_PAGE_SIZE rows per request and only the first MAX_BROWSE_ROWS matches of
+ * any search, never the whole dataset.
  */
 export async function GET(req: NextRequest) {
   const wait = limit(`search:${clientIp(req.headers)}`, SEARCHES_PER_MINUTE);

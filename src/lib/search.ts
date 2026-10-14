@@ -5,9 +5,15 @@ import { compareCities, inPopulationBand, POPULATION_BANDS, SORT_OPTIONS, type P
  * Server-side city search used by /api/search. Filtering and sorting run over
  * the full dataset on the server; only the requested page goes to the browser,
  * so the public site never hands out the whole dataset in one response.
+ *
+ * Browsing is also capped: any one search (including an empty one) can only
+ * be paged through its first MAX_BROWSE_ROWS matches. People narrow with a
+ * name or a state; a script can no longer walk page 1..N of an empty search
+ * to copy every city. The full dataset is the paid export.
  */
 
 export const MAX_PAGE_SIZE = 25;
+export const MAX_BROWSE_ROWS = 100;
 
 export type SearchParams = {
   q: string;
@@ -25,6 +31,8 @@ export type SearchResult = {
   pageSize: number;
   pageCount: number;
   datasetCount: number;
+  /** true when there are more matches than can be browsed (MAX_BROWSE_ROWS) */
+  capped: boolean;
   states: [string, string][];
 };
 
@@ -79,13 +87,23 @@ export function searchCities(all: CitySummary[], p: SearchParams): SearchResult 
   }
   hits.sort((a, b) => a.score - b.score || cmp(a.c, b.c));
 
-  const pageCount = Math.max(1, Math.ceil(hits.length / p.pageSize));
+  const browsable = hits.slice(0, MAX_BROWSE_ROWS);
+  const pageCount = Math.max(1, Math.ceil(browsable.length / p.pageSize));
   const page = Math.min(p.page, pageCount);
-  const data = hits.slice((page - 1) * p.pageSize, page * p.pageSize).map((h) => h.c);
+  const data = browsable.slice((page - 1) * p.pageSize, page * p.pageSize).map((h) => h.c);
 
   const stateMap = new Map<string, string>();
   for (const c of all) if (c.state_code) stateMap.set(c.state_code, c.state_name || c.state_code);
   const states = [...stateMap.entries()].sort((a, b) => a[1].localeCompare(b[1]));
 
-  return { data, total: hits.length, page, pageSize: p.pageSize, pageCount, datasetCount: all.length, states };
+  return {
+    data,
+    total: hits.length,
+    page,
+    pageSize: p.pageSize,
+    pageCount,
+    datasetCount: all.length,
+    capped: hits.length > MAX_BROWSE_ROWS,
+    states,
+  };
 }
