@@ -100,7 +100,8 @@ export async function updateLeader(
   governanceType: string,
   role: LeaderRole = "chief_executive",
   samePerson = false,
-): Promise<{ ok: boolean; error?: string; mayor?: string }> {
+  confirmSource = false,
+): Promise<{ ok: boolean; error?: string; mayor?: string; sourceNotOfficial?: boolean }> {
   await requireAdminUser();
   if (!ADMIN_TOKEN) return { ok: false, error: "ADMIN_TOKEN not configured" };
   const name = fullName.trim();
@@ -121,19 +122,27 @@ export async function updateLeader(
       source: source.trim() || null,
       governance_type: governanceType || null,
       same_person: samePerson,
+      // The API refuses a leader source that isn't plausibly the city's own
+      // site (source_not_official) unless the reviewer confirms it.
+      confirm_source: confirmSource,
     }),
   });
   if (!res.ok) {
     const text = await res.text();
     console.error("updateLeader failed:", res.status, text);
     let detail = text;
+    let sourceNotOfficial = false;
     try {
       const parsed = JSON.parse(text);
       if (typeof parsed.detail === "string") detail = parsed.detail;
+      else if (parsed.detail?.message) {
+        detail = parsed.detail.message;
+        sourceNotOfficial = parsed.detail.error === "source_not_official";
+      }
     } catch {
       /* not JSON */
     }
-    return { ok: false, error: detail || `Request failed (${res.status})` };
+    return { ok: false, error: detail || `Request failed (${res.status})`, sourceNotOfficial };
   }
   const json = await res.json();
   return { ok: true, mayor: json.new_current?.full_name ?? name };

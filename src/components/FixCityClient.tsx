@@ -120,6 +120,8 @@ export function FixCityClient() {
   const [roleInput, setRoleInput] = useState<LeaderRole>("chief_executive");
   const [confirmLeader, setConfirmLeader] = useState(false);
   const [samePerson, setSamePerson] = useState(false);
+  const [confirmSource, setConfirmSource] = useState(false);
+  const [sourceWarning, setSourceWarning] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [mayorUrlInput, setMayorUrlInput] = useState("");
   const [confirmOfficial, setConfirmOfficial] = useState(false);
@@ -162,6 +164,8 @@ export function FixCityClient() {
     setRoleInput("chief_executive");
     setConfirmLeader(false);
     setSamePerson(false);
+    setConfirmSource(false);
+    setSourceWarning(false);
     setUrlInput(row.url ?? "");
     setMayorUrlInput(row.mayor_url ?? "");
     setConfirmOfficial(false);
@@ -231,9 +235,14 @@ export function FixCityClient() {
     const res = await updateLeader(
       cityId, nameInput, titleInput, sourceInput, govInput, roleInput,
       roleInput === "chief_executive" && samePerson,
+      roleInput === "chief_executive" && confirmSource,
     );
     setBusy(false);
-    if (!res.ok) { setMsg(res.error || "Update failed"); return; }
+    if (!res.ok) {
+      if (res.sourceNotOfficial) setSourceWarning(true);
+      setMsg(res.error || "Update failed");
+      return;
+    }
     if (roleInput === "chief_administrator") {
       // The rows list leaders only; an administrator save leaves the row as is.
       setRows((prev) => prev.map((r) => r.city_id === cityId ? { ...r, governance_type: govInput } : r));
@@ -354,7 +363,16 @@ export function FixCityClient() {
                     Same person as {row.full_name}: just fix the spelling (no new leader in history)
                   </label>
                 ) : null}
-                <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                <input value={sourceInput} onChange={(e) => { setSourceInput(e.target.value); setSourceWarning(false); setConfirmSource(false); }} placeholder="Source URL (where you verified this)" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+                {roleInput === "chief_executive" && sourceWarning ? (
+                  <div role="alert" className="text-xs px-3 py-2 rounded-lg" style={{ background: "#fffbeb", color: "#b45309" }}>
+                    This source doesn&apos;t look like {row.city}&apos;s own site, and saving records the leader as verified from it. Paste the city&apos;s own page, or confirm:
+                    <label className="mt-2 flex items-center gap-2 font-medium">
+                      <input type="checkbox" checked={confirmSource} onChange={(e) => setConfirmSource(e.target.checked)} />
+                      I checked this source is {row.city}, {row.state_code}&apos;s own official page
+                    </label>
+                  </div>
+                ) : null}
                 <div className="flex items-center gap-2">
                   <button onClick={() => save(row.city_id)} disabled={busy || leaderTitleUnconfirmed} className="text-xs px-4 py-1.5 rounded-lg text-white disabled:opacity-40" style={{ background: "#047857" }}>{busy ? "Saving…" : "Save"}</button>
                   <button onClick={() => setEditing(null)} disabled={busy} className="text-xs px-3 py-1.5 text-slate-500">Cancel</button>
