@@ -70,3 +70,18 @@ body {
     animation: none !important;
   }
 }
+
+/* Play: confetti on a perfect run (States and capitals). Falls once, then stays;
+   people who ask for reduced motion see it without the fall. */
+@keyframes cg-fall {
+  0% { transform: translateY(-140px) rotate(0deg); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translateY(0) rotate(var(--cg-r, 200deg)); opacity: 1; }
+}
+.cg-confetti {
+  position: absolute;
+  animation: cg-fall 1.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cg-confetti { animation: none; }
+}
