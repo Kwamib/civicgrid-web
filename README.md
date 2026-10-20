@@ -18,7 +18,7 @@ It deploys to Vercel through Vercel's Git integration.
 | `CIVICGRID_API_KEY` | server | Key used to read city data |
 | `ADMIN_TOKEN` | server | Admin API token for the review queue and Fix a city |
 | `ADMIN_EMAILS` | server | Comma-separated admin allowlist (changing it needs a redeploy) |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | Auth |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_...`; the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` still works as a fallback until it is removed) | public | Auth |
 | `CIVICGRID_API_BASE` | server, optional | Point at a local API, e.g. `http://127.0.0.1:8000`. Defaults to production. |
 
 ## Develop
