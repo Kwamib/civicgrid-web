@@ -70,6 +70,30 @@ export async function searchCities(q: string, onlyUnverified = false): Promise<C
   return json.cities ?? [];
 }
 
+/**
+ * One city by id, for Fix-a-city links like /admin/cities?id=2140.
+ * Only opens the city: nothing is saved until the reviewer presses Save.
+ */
+export async function getCityById(cityId: number): Promise<CityRow | null> {
+  await requireAdminUser();
+  if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not configured");
+  if (!Number.isSafeInteger(cityId) || cityId <= 0) return null;
+  const params = new URLSearchParams({ city_id: String(cityId), limit: "1" });
+  const res = await fetch(`${API_BASE}/admin/cities/search?${params}`, {
+    headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    console.error("getCityById failed:", res.status, await res.text());
+    return null;
+  }
+  const json = await res.json();
+  const row: CityRow | undefined = json.cities?.[0];
+  // An API without city_id support ignores it and returns other cities;
+  // never open a city that isn't the one asked for.
+  return row && row.city_id === cityId ? row : null;
+}
+
 export async function listUnsure(offset = 0): Promise<{ cities: CityRow[]; total: number }> {
   await requireAdminUser();
   if (!ADMIN_TOKEN) throw new Error("ADMIN_TOKEN not configured");

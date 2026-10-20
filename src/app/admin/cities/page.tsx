@@ -5,12 +5,22 @@ import { FixCityClient } from "@/components/FixCityClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function FixCityPage() {
+export default async function FixCityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string | string[] }>;
+}) {
   const user = await getCurrentUser();
   const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim());
   if (!user || !adminEmails.includes(user.email ?? "")) {
     redirect("/login");
   }
+
+  // ?id=2140 opens that city. Only a plain number is accepted; anything else
+  // is ignored. The link never fills in values or saves.
+  const { id } = await searchParams;
+  const rawId = typeof id === "string" ? id : undefined;
+  const initialCityId = rawId && /^[1-9][0-9]{0,8}$/.test(rawId) ? Number(rawId) : null;
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -25,7 +35,7 @@ export default async function FixCityPage() {
             Search any city, check the source, and correct its mayor. Saves stamp the record as verified.
           </p>
         </div>
-        <FixCityClient />
+        <FixCityClient initialCityId={initialCityId} />
       </main>
     </div>
   );

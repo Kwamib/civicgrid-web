@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   searchCities,
+  getCityById,
   listUnsure,
   listQueue,
   updateLeader,
@@ -104,7 +105,7 @@ function verifiedBadge(ts: string | null) {
   return <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "#ecfdf5", color: "#047857" }}>verified {d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</span>;
 }
 
-export function FixCityClient() {
+export function FixCityClient({ initialCityId = null }: { initialCityId?: number | null } = {}) {
   const [mode, setMode] = useState<"search" | "unsure" | QueueKind>("search");
   const [counts, setCounts] = useState<QueueCounts | null>(null);
   const [queueOffset, setQueueOffset] = useState(0);
@@ -127,6 +128,23 @@ export function FixCityClient() {
   const [confirmOfficial, setConfirmOfficial] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // A link like /admin/cities?id=2140 opens that city ready to edit. It only
+  // loads what is stored; nothing is saved until Save is pressed.
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    if (!initialCityId || openedFromLink.current) return;
+    openedFromLink.current = true;
+    (async () => {
+      setLoading(true); setMsg(null); setMode("search");
+      const row = await getCityById(initialCityId);
+      setLoading(false);
+      if (!row) { setMsg(`No city with id ${initialCityId}.`); return; }
+      setQ(row.city);
+      setRows([row]);
+      startEdit(row);
+    })();
+  }, [initialCityId]);
 
   async function doSearch(e?: React.FormEvent) {
     e?.preventDefault();
