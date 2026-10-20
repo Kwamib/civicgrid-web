@@ -8,6 +8,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Explore cities" },
   { href: "/states", label: "States" },
   { href: "/compare", label: "Compare" },
+  { href: "/play", label: "Play" },
   { href: "/developers", label: "API & docs" },
   { href: "/methodology", label: "Methodology" },
 ];

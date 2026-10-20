@@ -14,8 +14,21 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
+// If Supabase isn't configured (a Preview deployment without its settings),
+// creating the client throws. Treat that as "signed out" so public pages still
+// render; protected pages already redirect or refuse when there is no user.
+async function clientOrNull() {
+  try {
+    return await createClient();
+  } catch (err) {
+    console.error("Supabase auth unavailable; treating the visitor as signed out:", (err as Error).message);
+    return null;
+  }
+}
+
 export const getCurrentUser = cache(async () => {
-  const supabase = await createClient();
+  const supabase = await clientOrNull();
+  if (!supabase) return null;
 
   const {
     data: { user },
@@ -36,7 +49,8 @@ export const getCurrentUser = cache(async () => {
  * Returns null if no active session.
  */
 export const getSessionToken = cache(async () => {
-  const supabase = await createClient();
+  const supabase = await clientOrNull();
+  if (!supabase) return null;
 
   const {
     data: { session },
