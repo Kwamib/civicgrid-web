@@ -53,16 +53,26 @@ export async function generateMetadata({
   ];
   const description = parts.filter(Boolean).join(" ");
 
+  const shareTitle = city.leader_name ? `${city.leader_name} · ${place}` : place;
+
   return {
     title,
     description,
     openGraph: {
-      title: city.leader_name ? `${city.leader_name} · ${place}` : place,
+      title: shareTitle,
       description,
       url: `https://www.civicgrid.org/cities/${slug}`,
       siteName: "CivicGrid",
       type: "website",
       images: OG_IMAGES,
+    },
+    // Without this, X (Twitter) previews fall back to the generic "CivicGrid"
+    // card from layout.tsx: a page's twitter block replaces the layout's whole.
+    twitter: {
+      card: "summary_large_image",
+      title: shareTitle,
+      description,
+      images: OG_IMAGES.map((img) => img.url),
     },
   };
 }
