@@ -3,8 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageHeading } from "@/components/ui";
 import { CorrectionForm } from "@/components/CorrectionForm";
-import { getAllCities } from "@/lib/cities";
-import { findCityBySlug } from "@/lib/slug";
+import { getCityBySlug } from "@/lib/cities";
 import { OG_IMAGES } from "@/lib/og";
 
 export const metadata: Metadata = {
@@ -28,7 +27,7 @@ export default async function CorrectionPage({
   const { city: slug } = await searchParams;
   let cityLabel = "";
   if (slug) {
-    const match = findCityBySlug(await getAllCities(), slug);
+    const match = await getCityBySlug(slug);
     if (match) cityLabel = `${match.city}, ${match.state_code}`;
   }
 
