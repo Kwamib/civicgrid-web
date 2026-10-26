@@ -1,3 +1,5 @@
+import { findCityBySlug } from "@/lib/slug";
+
 // Override for local development against a local API; defaults to production.
 const API_BASE = process.env.CIVICGRID_API_BASE || "https://api.civicgrid.org";
 const API_KEY = process.env.CIVICGRID_API_KEY;
@@ -207,4 +209,68 @@ export async function getCityHistory(cityId: number): Promise<CityHistory | null
   } catch {
     return null;
   }
+}
+
+export type CityDetail = {
+  city: City;
+  /** Null when history is unavailable, so the page hides that section. */
+  history: CityHistory | null;
+};
+
+// Every slug citySlug() can produce. Anything else (bot noise, typos with
+// capitals or dots) cannot match a city, so it is answered without an API call.
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function parseHistory(json: { leadership_history?: unknown; published_changes?: unknown }): CityHistory | null {
+  if (!Array.isArray(json.leadership_history)) return null;
+  return {
+    leadership_history: json.leadership_history as LeadershipHistoryRow[],
+    published_changes: Array.isArray(json.published_changes) ? (json.published_changes as PublishedChange[]) : [],
+  };
+}
+
+/**
+ * One city by its URL slug, with its published history, in a single small
+ * request (GET /cities/by-slug/{slug}, a few KB) instead of downloading every
+ * city (~2.25 MB) to find one. City pages used to do the latter on every
+ * render, which is what pushed Supabase egress over the Free plan in Oct 2026.
+ *
+ * Response is under Next.js's 2 MB data-cache limit, so the normal fetch cache
+ * applies here (unlike getAllCities, which must use no-store).
+ *
+ * Falls back to the old full-list lookup when the API is older than the
+ * by-slug route or the request fails, so deploy order between the API and the
+ * site does not matter. A 404 whose detail is "city not found" is a real miss.
+ */
+export async function getCityDetailBySlug(slug: string): Promise<CityDetail | null> {
+  if (!SLUG_RE.test(slug) || slug.length > 120) return null;
+
+  if (API_KEY) {
+    try {
+      const res = await fetch(`${API_BASE}/cities/by-slug/${encodeURIComponent(slug)}`, {
+        headers: { Authorization: `Bearer ${API_KEY}` },
+        next: { revalidate: 3600 },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.city) return { city: json.city as City, history: parseHistory(json) };
+      } else if (res.status === 404) {
+        const body = await res.json().catch(() => null);
+        if (body && body.detail === "city not found") return null;
+        // Any other 404 means the API does not have the route yet: fall back.
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("[getCityDetailBySlug] falling back to the full list:", message);
+    }
+  }
+
+  const city = findCityBySlug(await getAllCities(), slug);
+  if (!city) return null;
+  return { city, history: await getCityHistory(city.id) };
+}
+
+/** Just the city record for a slug (pages that don't show history). */
+export async function getCityBySlug(slug: string): Promise<City | null> {
+  return (await getCityDetailBySlug(slug))?.city ?? null;
 }

@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { citySlug } from "@/lib/slug";
-import { getAllCities, getCityHistory, type City, type CityHistory } from "@/lib/cities";
+import { getCityDetailBySlug, type City, type CityHistory } from "@/lib/cities";
 import {
   displayHost,
   formatDate,
@@ -24,9 +23,10 @@ export const revalidate = 3600;
 type AdminFields = { administrator_name?: string | null; administrator_title?: string | null };
 type RoleField = { role?: "chief_executive" | "chief_administrator" | null };
 
+// generateMetadata and the page both call this with the same slug; Next.js
+// dedupes the identical fetch within one render, so it is one API request.
 async function getCityBySlug(slug: string): Promise<City | null> {
-  const all = await getAllCities();
-  return all.find((c) => citySlug(c.city, c.state_code) === slug) ?? null;
+  return (await getCityDetailBySlug(slug))?.city ?? null;
 }
 
 export async function generateMetadata({
@@ -79,11 +79,10 @@ export async function generateMetadata({
 
 export default async function CityDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const found = await getCityBySlug(slug);
-  if (!found) notFound();
-  const city = found as City & AdminFields;
-
-  const history = await getCityHistory(city.id);
+  const detail = await getCityDetailBySlug(slug);
+  if (!detail) notFound();
+  const city = detail.city as City & AdminFields;
+  const history = detail.history;
   const v = verificationSummary(city);
   const verified = formatDate(city.leader_last_verified_at);
   const checked = formatDate(city.last_checked_at);

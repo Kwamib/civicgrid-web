@@ -2,17 +2,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { citySlug } from "@/lib/slug";
-import { getAllCities, type City } from "@/lib/cities";
+import { getCityBySlug, type City } from "@/lib/cities";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { OG_IMAGES } from "@/lib/og";
 
 export const revalidate = 3600;
 
-async function findCity(slug: string): Promise<City | null> {
-  const all = await getAllCities();
-  return all.find((c) => citySlug(c.city, c.state_code) === slug) ?? null;
-}
+const findCity = getCityBySlug;
 
 export async function generateMetadata({
   params,
