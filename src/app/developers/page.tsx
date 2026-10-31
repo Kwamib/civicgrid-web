@@ -28,7 +28,8 @@ const ENDPOINTS: { method: string; path: string; desc: string; paid?: boolean }[
   { method: "GET", path: "/stats", desc: "Aggregate counts." },
   { method: "GET", path: "/stats/states", desc: "Per-state city counts and population." },
   { method: "GET", path: "/stats/states/{state_code}", desc: "One state's aggregates." },
-  { method: "GET", path: "/health", desc: "Liveness and database readiness. No key required." },
+  { method: "GET", path: "/livez", desc: "Liveness: is the API process answering? Never touches the database. No key required." },
+  { method: "GET", path: "/health", desc: "Readiness: can the API reach its database? No key required." },
 ];
 
 const FIELDS: { name: string; desc: string; isNew?: boolean }[] = [
